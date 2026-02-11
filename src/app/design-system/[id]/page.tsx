@@ -84,6 +84,8 @@ interface DesignSystem {
   components: Components
   industry: string | null
   shareSlug: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export default function DesignSystemPreviewPage() {
@@ -94,23 +96,29 @@ export default function DesignSystemPreviewPage() {
   const [copiedValue, setCopiedValue] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchDesignSystem()
-  }, [params.id])
-
-  const fetchDesignSystem = async () => {
-    try {
-      const response = await fetch(`/api/design-systems/${params.id}`)
-      if (!response.ok) throw new Error('Failed to fetch design system')
-      const data = await response.json()
-      setDesignSystem(data)
-    } catch (error) {
-      console.error('Error fetching design system:', error)
-      alert('Failed to load design system')
-      router.push('/')
-    } finally {
-      setLoading(false)
+    const fetchDesignSystem = async () => {
+      const id = params.id
+      if (!id) {
+        setLoading(false)
+        return
+      }
+      
+      try {
+        const response = await fetch(`/api/design-systems/${id}`)
+        if (!response.ok) throw new Error('Failed to fetch design system')
+        const data = await response.json()
+        setDesignSystem(data)
+      } catch (error) {
+        console.error('Error fetching design system:', error)
+        alert('Failed to load design system')
+        router.push('/')
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+    
+    fetchDesignSystem()
+  }, [params.id, router])
 
   const copyToClipboard = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value)
@@ -125,7 +133,7 @@ export default function DesignSystemPreviewPage() {
     setTimeout(() => setCopiedValue(null), 2000)
   }
 
-  const handleExport = async (format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma') => {
+  const handleExport = async (format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json') => {
     try {
       const response = await fetch(`/api/design-systems/${params.id}/export?format=${format}`)
       if (!response.ok) throw new Error('Export failed')
@@ -227,7 +235,7 @@ export default function DesignSystemPreviewPage() {
             <CardDescription>Download your design tokens in multiple formats</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Button
                 variant="outline"
                 onClick={() => handleExport('json')}
@@ -273,6 +281,15 @@ export default function DesignSystemPreviewPage() {
                 <span className="font-medium">Figma</span>
                 <span className="text-xs text-muted-foreground">Tokens plugin</span>
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleExport('figma-json')}
+                className="flex flex-col items-center gap-2 h-auto py-4"
+              >
+                <FileJson className="h-8 w-8" />
+                <span className="font-medium">Figma JSON</span>
+                <span className="text-xs text-muted-foreground">Structure file</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -298,8 +315,7 @@ export default function DesignSystemPreviewPage() {
                 {Object.entries(colors).map(([colorName, colorScale]) => (
                   <div key={colorName} className="space-y-2">
                     <h3 className="text-lg font-semibold capitalize">{colorName}</h3>
-                    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-11 gap-2">
-                      {Object.entries(colorScale).map(([shade, hex]) => (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-11 gap-2">                      {(Object.entries(colorScale) as [string, string][]).map(([shade, hex]) => (
                         <button
                           key={shade}
                           onClick={() => copyToClipboard(hex, `${colorName}-${shade}`)}
@@ -404,12 +420,12 @@ export default function DesignSystemPreviewPage() {
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   {Object.entries(spacing.values).map(([key, value]) => {
-                    const size = parseInt(value) || 0
+                    const size = parseInt(String(value)) || 0
                     return (
                       <div key={key} className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                         <div
                           className="bg-primary/20 rounded"
-                          style={{ width: value, height: '24px', minWidth: '16px' }}
+                          style={{ width: String(value), height: '24px', minWidth: '16px' }}
                         />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">

@@ -120,7 +120,7 @@ export default function GeneratePage() {
                     <SelectValue placeholder="Select an industry for better results" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     <SelectItem value="fintech">Fintech / Finance</SelectItem>
                     <SelectItem value="ecommerce">E-commerce</SelectItem>
                     <SelectItem value="healthtech">Healthtech / Healthcare</SelectItem>

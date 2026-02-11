@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai'
 
 // Initialize Gemini AI
-const getGeminiModel = (modelName: string = 'gemini-2.0-flash-exp'): GenerativeModel => {
+const getGeminiModel = (modelName: string = 'gemini-2.5-flash'): GenerativeModel => {
   const apiKey = process.env.GEMINI_API_KEY
 
   if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
@@ -21,7 +21,7 @@ export class GeminiAI {
   private model: GenerativeModel
   private history: Array<{ role: string; parts: Array<{ text: string }> }> = []
 
-  constructor(modelName: string = 'gemini-2.0-flash-exp') {
+  constructor(modelName: string = 'gemini-2.5-flash') {
     this.model = getGeminiModel(modelName)
   }
 

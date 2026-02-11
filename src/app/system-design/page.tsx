@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -105,7 +106,6 @@ export default function SystemDesignPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -139,10 +139,8 @@ export default function SystemDesignPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Generator Section */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -162,7 +160,6 @@ export default function SystemDesignPage() {
                       <SelectValue placeholder="Select expected scale for your system" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       {SCALE_OPTIONS.map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -176,14 +173,11 @@ export default function SystemDesignPage() {
                   <Label htmlFor="prompt">System Requirements</Label>
                   <Textarea
                     id="prompt"
-                    placeholder="Describe the system you want to design. Include features, requirements, constraints, and any specific technology preferences..."
+                    placeholder="Describe the system you want to design..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     className="min-h-[150px] text-base resize-none"
                   />
-                  <p className="text-sm text-muted-foreground">
-                    Be specific about features, constraints, performance requirements, and business goals.
-                  </p>
                 </div>
 
                 <div className="space-y-3">
@@ -195,7 +189,7 @@ export default function SystemDesignPage() {
                         onClick={() => handleExampleClick(example)}
                         className="w-full text-left p-3 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-all text-sm text-muted-foreground hover:text-foreground"
                       >
-                        "{example}"
+                        "{example.substring(0, 80)}..."
                       </button>
                     ))}
                   </div>
@@ -223,7 +217,6 @@ export default function SystemDesignPage() {
             </Card>
           </div>
 
-          {/* Preview Section */}
           <div className="space-y-6">
             {generatedDesign ? (
               <Card>
@@ -245,7 +238,6 @@ export default function SystemDesignPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Overview */}
                   {generatedDesign.overview && (
                     <div className="space-y-2">
                       <h3 className="font-semibold flex items-center gap-2">
@@ -256,101 +248,23 @@ export default function SystemDesignPage() {
                     </div>
                   )}
 
-                  {/* Components */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Layers className="h-4 w-4" />
-                      Components ({generatedDesign.components?.length || 0})
-                    </h3>
+                  {generatedDesign.components && (
                     <div className="space-y-2">
-                      {generatedDesign.components?.map((comp: any, idx: number) => (
-                        <div key={idx} className="p-3 border rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="secondary" className="text-xs">{comp.type}</Badge>
-                            <span className="font-medium">{comp.name}</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">{comp.description}</p>
-                          {comp.technologies && comp.technologies.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {comp.technologies.map((tech: string, tIdx: number) => (
-                                <Badge key={tIdx} variant="outline" className="text-xs">
-                                  {tech}
-                                </Badge>
-                              ))}
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <Layers className="h-4 w-4" />
+                        Components ({generatedDesign.components.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {generatedDesign.components.map((comp: any, idx: number) => (
+                          <div key={idx} className="p-3 border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="text-xs">{comp.type}</Badge>
+                              <span className="font-medium">{comp.name}</span>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Database */}
-                  {generatedDesign.database && (
-                    <div className="space-y-2">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        <Database className="h-4 w-4" />
-                        Database
-                      </h3>
-                      <div className="p-3 border rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="default" className="text-xs">
-                            {generatedDesign.database.primary?.type}
-                          </Badge>
-                          <span className="font-medium">Primary Database</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{generatedDesign.database.primary?.reasoning}</p>
+                            <p className="text-sm text-muted-foreground">{comp.description}</p>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Security */}
-                  {generatedDesign.security && (
-                    <div className="space-y-2">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Security
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Authentication:</span>{' '}
-                          <span className="font-medium">{generatedDesign.security.authentication}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Authorization:</span>{' '}
-                          <span className="font-medium">{generatedDesign.security.authorization}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Encryption:</span>{' '}
-                          <span className="font-medium">{generatedDesign.security.encryption}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Considerations */}
-                  {generatedDesign.considerations && (
-                    <div className="space-y-3 pt-4 border-t">
-                      <h3 className="font-semibold">Key Considerations</h3>
-                      {generatedDesign.considerations.challenges && (
-                        <div>
-                          <p className="text-sm font-medium mb-1">Challenges:</p>
-                          <ul className="text-sm text-muted-foreground list-disc list-inside">
-                            {generatedDesign.considerations.challenges.map((challenge: string, idx: number) => (
-                              <li key={idx}>{challenge}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {generatedDesign.considerations.tradeoffs && (
-                        <div>
-                          <p className="text-sm font-medium mb-1">Trade-offs:</p>
-                          <ul className="text-sm text-muted-foreground list-disc list-inside">
-                            {generatedDesign.considerations.tradeoffs.map((tradeoff: string, idx: number) => (
-                              <li key={idx}>{tradeoff}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
                   )}
                 </CardContent>
@@ -364,7 +278,7 @@ export default function SystemDesignPage() {
                   <div>
                     <h3 className="text-lg font-semibold">No System Design Generated Yet</h3>
                     <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-                      Describe your system requirements on the left and click generate to create a comprehensive architecture design.
+                      Describe your system requirements and click generate.
                     </p>
                   </div>
                 </CardContent>

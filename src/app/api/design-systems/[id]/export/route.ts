@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { 
+  convertDesignSystemToFigma, 
+  generateFigmaPluginTokens,
+  FigmaFile 
+} from '@/lib/figma-generator'
 
 interface ExportOptions {
-  format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma'
+  format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json'
 }
 
 function generateJSON(designSystem: any): string {
@@ -151,8 +156,14 @@ function generateFigmaTokens(designSystem: any): string {
   const figmaTokens = {
     global: {
       color: {},
-      font: {},
-      dimension: {},
+      font: {
+        families: {},
+        sizes: {},
+        weights: {}
+      },
+      dimension: {
+        spacing: {}
+      },
       borderRadius: {},
       boxShadow: {}
     }
@@ -180,7 +191,7 @@ function generateFigmaTokens(designSystem: any): string {
 
   figmaTokens.global.font.weights = {}
   Object.entries(typography.fontWeight).forEach(([name, weight]) => {
-    figmaTokens.global.font.weights[name] = { value: parseInt(weight) }
+    figmaTokens.global.font.weights[name] = { value: parseInt(String(weight), 10) }
   })
 
   // Spacing
@@ -206,21 +217,22 @@ function generateFigmaTokens(designSystem: any): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const searchParams = request.nextUrl.searchParams
     const format = searchParams.get('format') as ExportOptions['format']
 
-    if (!format || !['json', 'css', 'tailwind', 'scss', 'figma'].includes(format)) {
+    if (!format || !['json', 'css', 'tailwind', 'scss', 'figma', 'figma-json'].includes(format)) {
       return NextResponse.json(
-        { error: 'Invalid format. Use: json, css, tailwind, scss, or figma' },
+        { error: 'Invalid format. Use: json, css, tailwind, scss, figma, or figma-json' },
         { status: 400 }
       )
     }
 
     const designSystem = await db.designSystem.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!designSystem) {
@@ -272,6 +284,12 @@ export async function GET(
         content = generateFigmaTokens(systemData)
         contentType = 'application/json'
         filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}-figma-tokens.json`
+        break
+      case 'figma-json':
+        const figmaFile = convertDesignSystemToFigma(designSystem)
+        content = JSON.stringify(figmaFile, null, 2)
+        contentType = 'application/json'
+        filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}.figma.json`
         break
       default:
         return NextResponse.json(

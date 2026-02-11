@@ -164,7 +164,6 @@ export default function FigmaPage() {
                       <SelectValue placeholder="Select a design type for better results" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       {DESIGN_TYPES.map(type => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}

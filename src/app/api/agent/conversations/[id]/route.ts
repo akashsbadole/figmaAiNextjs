@@ -4,9 +4,10 @@ import { auth } from '@clerk/nextjs/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { userId: clerkUserId } = await auth()
 
     if (!clerkUserId) {
@@ -30,7 +31,7 @@ export async function GET(
 
     // Get conversation
     const conversation = await db.conversation.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!conversation || conversation.userId !== user.id) {
@@ -66,9 +67,10 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { userId: clerkUserId } = await auth()
 
     if (!clerkUserId) {
@@ -92,7 +94,7 @@ export async function DELETE(
 
     // Get and verify conversation
     const conversation = await db.conversation.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!conversation || conversation.userId !== user.id) {
@@ -104,7 +106,7 @@ export async function DELETE(
 
     // Delete conversation
     await db.conversation.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({
