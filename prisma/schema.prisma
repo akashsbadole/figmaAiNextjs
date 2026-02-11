@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String                 @id @default(cuid())
+  clerkId        String                 @unique // Clerk user ID
+  email          String                 @unique
+  name           String?
+  imageUrl       String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  designSystems  DesignSystem[]
+  conversations  Conversation[]
+  figmaDesigns   FigmaDesign[]
+  systemDesigns  SystemDesign[]
+}
+
+model DesignSystem {
+  id             String    @id @default(cuid())
+  name           String
+  description    String?
+  prompt         String    // Original AI prompt
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+
+  // Design Tokens (stored as JSON)
+  colors         String    // JSON: { primary, secondary, accent, neutral, success, warning, error, etc. }
+  typography      String    // JSON: { fontFamily, fontSize, fontWeight, lineHeight }
+  spacing         String    // JSON: { scale, values }
+  borderRadius    String    // JSON: { sm, md, lg, xl, full }
+  shadows         String    // JSON: { sm, md, lg, xl }
+
+  // Component configurations
+  components      String    // JSON: { button, card, input, modal, etc. }
+
+  // Metadata
+  category        String?   // e.g., "fintech", "healthtech", "ecommerce"
+  industry        String?
+  version         Int       @default(1)
+
+  // Sharing
+  isPublic        Boolean   @default(false)
+  shareSlug       String?   @unique
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([shareSlug])
+  @@index([isPublic])
+}
+
+model Conversation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String?
+  type        String   // "ui-ux", "system-design", "figma"
+  messages    String   // JSON: array of message objects
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+}
+
+model FigmaDesign {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  prompt      String
+  designData  String   // JSON: Figma-compatible design structure
+  isPublic    Boolean  @default(false)
+  shareSlug   String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([shareSlug])
+}
+
+model SystemDesign {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  prompt      String
+  designData  String   // JSON: System architecture, components, etc.
+  isPublic    Boolean  @default(false)
+  shareSlug   String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([shareSlug])
+}
