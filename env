@@ -1,5 +1,44 @@
 GEMINI_API_KEY=""
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
-# Database Configuration
-DATABASE_URL="file:./db/custom.db"
+
+# Database Configuration (PostgreSQL for production)
+DATABASE_URL="postgresql://user:password@localhost:5432/nikhil_ui_ux?schema=public"
+
+# Redis Configuration (for caching and sessions)
+REDIS_URL="redis://localhost:6379"
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# AI Model Configuration
+AI_FLASH_MODEL=gemini-2.5-flash
+AI_PRO_MODEL=gemini-2.5-pro
+AI_VISION_MODEL=gemini-2.5-pro
+
+# Figma Integration
+FIGMA_ACCESS_TOKEN=""
+
+# Storage (AWS S3 or Cloudflare R2)
+S3_BUCKET_NAME=""
+S3_ACCESS_KEY=""
+S3_SECRET_KEY=""
+S3_REGION="us-east-1"
+S3_ENDPOINT=""
+
+# Vector Database (for embeddings)
+VECTOR_DB_URL=""
+VECTOR_DB_API_KEY=""
+
+# WebSocket Server
+WEBSOCKET_PORT=3001
+
+# Analytics
+ANALYTICS_ENABLED=true
+
+# Feature Flags
+FEATURE_MARKETPLACE=false
+FEATURE_COLLABORATION=false
+FEATURE_VOICE_INPUT=false
+FEATURE_AB_TESTING=false

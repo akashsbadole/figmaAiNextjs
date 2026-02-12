@@ -5,9 +5,10 @@ import {
   generateFigmaPluginTokens,
   FigmaFile 
 } from '@/lib/figma-generator'
+import { createTokensStudioExport } from '@/lib/figmagic-exporter'
 
 interface ExportOptions {
-  format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json'
+  format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json' | 'tokens-studio'
 }
 
 function generateJSON(designSystem: any): string {
@@ -224,9 +225,9 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams
     const format = searchParams.get('format') as ExportOptions['format']
 
-    if (!format || !['json', 'css', 'tailwind', 'scss', 'figma', 'figma-json'].includes(format)) {
+    if (!format || !['json', 'css', 'tailwind', 'scss', 'figma', 'figma-json', 'tokens-studio'].includes(format)) {
       return NextResponse.json(
-        { error: 'Invalid format. Use: json, css, tailwind, scss, figma, or figma-json' },
+        { error: 'Invalid format. Use: json, css, tailwind, scss, figma, figma-json, or tokens-studio' },
         { status: 400 }
       )
     }
@@ -290,6 +291,12 @@ export async function GET(
         content = JSON.stringify(figmaFile, null, 2)
         contentType = 'application/json'
         filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}.figma.json`
+        break
+      case 'tokens-studio':
+        const tokensStudioData = createTokensStudioExport(designSystem)
+        content = JSON.stringify(tokensStudioData, null, 2)
+        contentType = 'application/json'
+        filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}-tokens-studio.json`
         break
       default:
         return NextResponse.json(

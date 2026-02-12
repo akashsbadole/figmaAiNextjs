@@ -25,7 +25,9 @@ import {
   FileJson,
   Code2,
   Wind,
-  FileCode
+  FileCode,
+  Figma,
+  ExternalLink
 } from 'lucide-react'
 
 interface ColorScale {
@@ -133,7 +135,38 @@ export default function DesignSystemPreviewPage() {
     setTimeout(() => setCopiedValue(null), 2000)
   }
 
-  const handleExport = async (format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json') => {
+  const handleImportToFigma = async () => {
+    if (!designSystem) return
+    
+    try {
+      const response = await fetch(`/api/design-systems/${params.id}/export?format=tokens-studio`)
+      if (!response.ok) throw new Error('Export failed')
+      
+      const tokensData = await response.json()
+      
+      // Open Figma with tokens data (this would use Figma REST API in production)
+      // For now, we'll download the tokens and provide instructions
+      const blob = new Blob([JSON.stringify(tokensData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}-figma-tokens.json`
+      document.body.appendChild(a)
+      a.click()
+      URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      // Open Figma new file URL
+      window.open('https://www.figma.com/files', '_blank')
+      
+      alert('Tokens downloaded! Install Tokens Studio plugin in Figma and import the JSON file.')
+    } catch (error) {
+      console.error('Figma import error:', error)
+      alert('Failed to prepare Figma import')
+    }
+  }
+
+  const handleExport = async (format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json' | 'tokens-studio') => {
     try {
       const response = await fetch(`/api/design-systems/${params.id}/export?format=${format}`)
       if (!response.ok) throw new Error('Export failed')
@@ -234,7 +267,35 @@ export default function DesignSystemPreviewPage() {
             </CardTitle>
             <CardDescription>Download your design tokens in multiple formats</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            {/* Figma Plugin Section */}
+            <div className="p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 mb-3">
+                <Figma className="h-5 w-5 text-purple-500" />
+                <h3 className="font-semibold">Figma Plugin</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Use our Figma plugin to directly import this design system
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-background px-2 py-1 rounded flex-1 font-mono">
+                    {designSystem.id}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(designSystem.id, 'design-id')}
+                  >
+                    {copiedValue === 'design-id' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Copy this ID and use it in the Figma plugin
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Button
                 variant="outline"
@@ -289,6 +350,15 @@ export default function DesignSystemPreviewPage() {
                 <FileJson className="h-8 w-8" />
                 <span className="font-medium">Figma JSON</span>
                 <span className="text-xs text-muted-foreground">Structure file</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleExport('tokens-studio')}
+                className="flex flex-col items-center gap-2 h-auto py-4"
+              >
+                <Figma className="h-8 w-8" />
+                <span className="font-medium">Tokens Studio</span>
+                <span className="text-xs text-muted-foreground">For Figma import</span>
               </Button>
             </div>
           </CardContent>

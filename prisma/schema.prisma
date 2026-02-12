@@ -109,3 +109,18 @@ model SystemDesign {
   @@index([userId])
   @@index([shareSlug])
 }
+
+model DesignHistory {
+  id             String   @id @default(cuid())
+  userId         String
+  designSystemId String?  // Reference to the generated design system
+  name           String
+  description    String?
+  prompt         String
+  type           String   // "design-system", "figma", "system-design"
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([type])
+}

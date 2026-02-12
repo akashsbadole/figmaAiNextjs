@@ -18,7 +18,8 @@ import {
   Share2,
   MessageSquare,
   FileCode,
-  Server
+  Server,
+  History
 } from 'lucide-react'
 
 interface DesignSystem {
@@ -119,6 +120,12 @@ export default function DashboardPage() {
                 {total} design system{total !== 1 ? 's' : ''} created
               </p>
             </div>
+            <Link href="/dashboard/history">
+              <Button variant="outline">
+                <History className="h-4 w-4 mr-2" />
+                View History
+              </Button>
+            </Link>
             <Link href="/generate">
               <Button size="lg">
                 <Sparkles className="h-4 w-4 mr-2" />

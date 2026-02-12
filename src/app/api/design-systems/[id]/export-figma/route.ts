@@ -7,6 +7,10 @@ import {
   generateFigmaPluginTokens,
   FigmaFile 
 } from '@/lib/figma-generator'
+import { 
+  createTokensStudioExport,
+  convertToTokensStudio 
+} from '@/lib/figmagic-exporter'
 
 export async function GET(
   request: NextRequest,
@@ -51,6 +55,18 @@ export async function GET(
     }
 
     // Generate Figma file based on format
+    if (format === 'tokens-studio') {
+      // Generate Tokens Studio (Figmagic) format for Figma import
+      const tokensData = createTokensStudioExport(designSystem)
+      
+      return new NextResponse(JSON.stringify(tokensData, null, 2), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="${designSystem.name.replace(/\s+/g, '-').toLowerCase()}-tokens-studio.json"`,
+        },
+      })
+    }
+
     if (format === 'figma-plugin') {
       // Generate Figma Tokens plugin format
       const tokensData = generateFigmaPluginTokens(designSystem)
