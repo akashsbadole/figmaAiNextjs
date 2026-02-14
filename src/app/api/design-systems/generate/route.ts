@@ -265,8 +265,38 @@ function createFallbackDesignSystem(): DesignSystemData {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Design System Generate] Starting request...')
+
+    // Validate environment variables first
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+      console.error('[Design System Generate] GEMINI_API_KEY not configured')
+      return NextResponse.json(
+        { error: 'AI service not configured. Please contact support.' },
+        { status: 500 }
+      )
+    }
+
+    if (!process.env.DATABASE_URL) {
+      console.error('[Design System Generate] DATABASE_URL not configured')
+      return NextResponse.json(
+        { error: 'Database not configured. Please contact support.' },
+        { status: 500 }
+      )
+    }
+
     // Get authenticated user
-    const { userId: clerkUserId } = await auth()
+    let clerkUserId: string | null = null
+    try {
+      const authResult = await auth()
+      clerkUserId = authResult.userId
+      console.log('[Design System Generate] Clerk User ID:', clerkUserId)
+    } catch (authError) {
+      console.error('[Design System Generate] Auth error:', authError)
+      return NextResponse.json(
+        { error: 'Authentication failed. Please sign in again.' },
+        { status: 401 }
+      )
+    }
 
     if (!clerkUserId) {
       return NextResponse.json(
@@ -276,9 +306,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user info from Clerk
-    const clerkUser = await currentUser()
+    let clerkUser: Awaited<ReturnType<typeof currentUser>> | null = null
+    try {
+      clerkUser = await currentUser()
+      console.log('[Design System Generate] Clerk User:', clerkUser?.emailAddresses[0]?.emailAddress)
+    } catch (clerkError) {
+      console.error('[Design System Generate] Failed to get Clerk user:', clerkError)
+      return NextResponse.json(
+        { error: 'Failed to retrieve user information. Please try again.' },
+        { status: 500 }
+      )
+    }
 
-    const { prompt, industry } = await request.json()
+    // Parse request body
+    let prompt: string
+    let industry: string | undefined
+    try {
+      const body = await request.json()
+      prompt = body.prompt
+      industry = body.industry
+      console.log('[Design System Generate] Prompt:', prompt?.substring(0, 100))
+      console.log('[Design System Generate] Industry:', industry)
+    } catch (parseError) {
+      console.error('[Design System Generate] Failed to parse request body:', parseError)
+      return NextResponse.json(
+        { error: 'Invalid request body. Please check your input.' },
+        { status: 400 }
+      )
+    }
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json(
@@ -288,24 +343,41 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create user in database
-    let user = await db.user.findUnique({
-      where: { clerkId: clerkUserId }
-    })
-
-    if (!user) {
-      // Create new user with Clerk data
-      const email = clerkUser?.emailAddresses[0]?.emailAddress || `user-${clerkUserId}@designai.com`
-      const name = clerkUser?.fullName || clerkUser?.firstName || 'User'
-      const imageUrl = clerkUser?.imageUrl
-
-      user = await db.user.create({
-        data: {
-          clerkId: clerkUserId,
-          email,
-          name,
-          imageUrl
-        }
+    console.log('[Design System Generate] Looking up user in database...')
+    let user: Awaited<ReturnType<typeof db.user.findUnique>> | Awaited<ReturnType<typeof db.user.create>>
+    try {
+      user = await db.user.findUnique({
+        where: { clerkId: clerkUserId }
       })
+
+      if (!user) {
+        console.log('[Design System Generate] User not found, creating new user...')
+        // Create new user with Clerk data
+        const email = clerkUser?.emailAddresses[0]?.emailAddress || `user-${clerkUserId}@designai.com`
+        const name = clerkUser?.fullName || clerkUser?.firstName || 'User'
+        const imageUrl = clerkUser?.imageUrl
+
+        user = await db.user.create({
+          data: {
+            clerkId: clerkUserId,
+            email,
+            name,
+            imageUrl
+          }
+        })
+        console.log('[Design System Generate] User created:', user.id)
+      } else {
+        console.log('[Design System Generate] User found:', user.id)
+      }
+    } catch (dbError) {
+      console.error('[Design System Generate] Database error during user lookup/creation:', dbError)
+      return NextResponse.json(
+        {
+          error: 'Database error. Please try again later.',
+          details: process.env.NODE_ENV === 'development' ? (dbError instanceof Error ? dbError.message : 'Unknown error') : undefined
+        },
+        { status: 500 }
+      )
     }
 
     // Generate a unique share slug
@@ -324,13 +396,16 @@ export async function POST(request: NextRequest) {
     let designSystem: DesignSystemData
 
     try {
+      console.log('[Design System Generate] Initializing Gemini AI...')
       const gemini = getGeminiAI()
+      console.log('[Design System Generate] Generating design system with AI...')
       const aiResponse = await gemini.generateText(userPrompt, SYSTEM_PROMPT)
 
       if (!aiResponse) {
-        console.warn('No response from AI, using fallback design system')
+        console.warn('[Design System Generate] No response from AI, using fallback design system')
         designSystem = createFallbackDesignSystem()
       } else {
+        console.log('[Design System Generate] AI response received, length:', aiResponse.length)
         // Parse the AI response
         try {
           // Clean up the response - remove markdown code blocks if present
@@ -340,76 +415,79 @@ export async function POST(request: NextRequest) {
             .trim()
 
           designSystem = JSON.parse(cleanedResponse)
+          console.log('[Design System Generate] Successfully parsed AI response')
         } catch (parseError) {
-          console.error('Failed to parse AI response:', parseError)
-          console.error('AI Response:', aiResponse.substring(0, 500))
+          console.error('[Design System Generate] Failed to parse AI response:', parseError)
+          console.error('[Design System Generate] AI Response preview:', aiResponse.substring(0, 500))
           // Use fallback on parse error
           designSystem = createFallbackDesignSystem()
         }
       }
     } catch (aiError) {
-      console.error('AI Generation error:', aiError)
+      console.error('[Design System Generate] AI Generation error:', aiError)
       // Use fallback design system on AI error
       designSystem = createFallbackDesignSystem()
     }
 
     // Generate a name for the design system
     const nameMatch = prompt.match(/Create a (.+?) design system/i) ||
-                     prompt.match(/Design a (.+?) design system/i) ||
-                     prompt.match(/Generate a (.+?) design system/i)
+      prompt.match(/Design a (.+?) design system/i) ||
+      prompt.match(/Generate a (.+?) design system/i)
     const name = nameMatch ? nameMatch[1].trim() : 'Custom Design System'
 
     // Create the design system
-    const savedSystem = await db.designSystem.create({
-      data: {
-        name,
-        description: prompt.substring(0, 200),
-        prompt,
-        userId: user.id,
-        colors: JSON.stringify(designSystem.colors),
-        typography: JSON.stringify(designSystem.typography),
-        spacing: JSON.stringify(designSystem.spacing),
-        borderRadius: JSON.stringify(designSystem.borderRadius),
-        shadows: JSON.stringify(designSystem.shadows),
-        components: JSON.stringify(designSystem.components),
-        industry: industry && industry !== 'none' ? industry : null,
-        isPublic: false,
-        shareSlug
-      }
-    })
+    console.log('[Design System Generate] Saving design system to database...')
+    try {
+      const savedSystem = await db.designSystem.create({
+        data: {
+          name,
+          description: prompt.substring(0, 200),
+          prompt,
+          userId: user.id,
+          colors: JSON.stringify(designSystem.colors),
+          typography: JSON.stringify(designSystem.typography),
+          spacing: JSON.stringify(designSystem.spacing),
+          borderRadius: JSON.stringify(designSystem.borderRadius),
+          shadows: JSON.stringify(designSystem.shadows),
+          components: JSON.stringify(designSystem.components),
+          industry: industry && industry !== 'none' ? industry : null,
+          isPublic: false,
+          shareSlug
+        }
+      })
+      console.log('[Design System Generate] Design system saved:', savedSystem.id)
 
-    return NextResponse.json({
-      success: true,
-      id: savedSystem.id,
-      shareSlug: savedSystem.shareSlug,
-      name: savedSystem.name
-    })
+      return NextResponse.json({
+        success: true,
+        id: savedSystem.id,
+        shareSlug: savedSystem.shareSlug,
+        name: savedSystem.name
+      })
+    } catch (dbError) {
+      console.error('[Design System Generate] Database error during design system creation:', dbError)
+      return NextResponse.json(
+        {
+          error: 'Failed to save design system. Please try again.',
+          details: process.env.NODE_ENV === 'development' ? (dbError instanceof Error ? dbError.message : 'Unknown error') : undefined
+        },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
-    console.error('Error generating design system:', error)
-    
+    console.error('[Design System Generate] Unexpected error:', error)
+
     // Determine error type and return appropriate message
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    
-    // Check for specific error types
-    if (errorMessage.includes('database') || errorMessage.includes('prisma')) {
-      return NextResponse.json(
-        { error: 'Database connection error. Please try again later.' },
-        { status: 500 }
-      )
-    }
-    
-    if (errorMessage.includes('API key') || errorMessage.includes(' GEMINI')) {
-      return NextResponse.json(
-        { error: 'AI service configuration error. Please contact support.' },
-        { status: 500 }
-      )
-    }
-    
+    const errorStack = error instanceof Error ? error.stack : undefined
+
+    console.error('[Design System Generate] Error message:', errorMessage)
+    console.error('[Design System Generate] Error stack:', errorStack)
+
     return NextResponse.json(
       {
-        error: 'Failed to generate design system',
-        details: process.env.NODE_ENV === 'development' ? errorMessage : 'An error occurred'
+        error: 'An unexpected error occurred',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : 'Please try again later'
       },
       { status: 500 }
     )

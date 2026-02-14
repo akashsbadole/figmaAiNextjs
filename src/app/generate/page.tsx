@@ -94,7 +94,7 @@ function generateFigmaFormatJson(designSystem: any): FigmaFormatItem[] {
   const borderRadius = designSystem.borderRadius || {}
   const components = designSystem.components || {}
   const industry = designSystem.industry || 'general'
-  
+
   // Extract colors
   const primaryColor = getColorFromScale(colors.primary, '500', '#18A0FB')
   const secondaryColor = getColorFromScale(colors.secondary, '500', '#6B7280')
@@ -103,16 +103,16 @@ function generateFigmaFormatJson(designSystem: any): FigmaFormatItem[] {
   const textMutedColor = getColorFromScale(colors.neutral, '600', '#6B7280')
   const backgroundColor = getColorFromScale(colors.neutral, '50', '#FFFFFF')
   const cardBackground = components.card?.background || '#FFFFFF'
-  
+
   // Extract typography values
   const titleFontSize = getFontSize(typography, 'xl', 18)
   const bodyFontSize = getFontSize(typography, 'base', 16)
   const titleFontWeight = getFontWeight(typography, 'medium')
-  
+
   // Extract spacing and border radius
   const paddingValue = getPadding(spacing, '4', 16)
   const cornerRadiusValue = getCornerRadius(borderRadius, 'md', 8)
-  
+
   // Generate content based on industry
   const getIndustryContent = (industry: string) => {
     const contentMap: Record<string, { items: Array<{ title: string; subtitle: string }> }> = {
@@ -182,9 +182,9 @@ function generateFigmaFormatJson(designSystem: any): FigmaFormatItem[] {
     }
     return contentMap[industry] || contentMap.general
   }
-  
+
   const content = getIndustryContent(industry)
-  
+
   // Generate items dynamically based on design system
   return content.items.map((item, index) => ({
     name: `Item ${index + 1}`,
@@ -234,6 +234,14 @@ export default function GeneratePage() {
     }
   }, [isLoaded, isSignedIn, router])
 
+  // Auto-generate Figma JSON when design system is loaded
+  useEffect(() => {
+    if (currentDesignSystem && generatedDesignSystem && !figmaJson) {
+      const figmaData = generateFigmaFormatJson(currentDesignSystem)
+      setFigmaJson(figmaData)
+    }
+  }, [currentDesignSystem, generatedDesignSystem, figmaJson])
+
   // Show loading while checking auth
   if (!isLoaded) {
     return (
@@ -251,13 +259,26 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     if (!prompt.trim()) return
 
-    const result = await createDesignSystem({ prompt, industry })
-    if (result) {
-      // Fetch the full design system to get all the data
-      await fetchDesignSystemById(result.id)
-      setGeneratedDesignSystem(result)
-    } else {
-      alert('Failed to generate design system. Please try again.')
+    try {
+      const result = await createDesignSystem({ prompt, industry })
+      if (result && result.id) {
+        // Fetch the full design system to get all the data
+        await fetchDesignSystemById(result.id)
+        setGeneratedDesignSystem(result)
+
+        // Auto-generate Figma JSON after successful generation
+        setTimeout(() => {
+          if (currentDesignSystem) {
+            const figmaData = generateFigmaFormatJson(currentDesignSystem)
+            setFigmaJson(figmaData)
+          }
+        }, 500)
+      } else {
+        alert('Failed to generate design system. Please try again.')
+      }
+    } catch (error) {
+      console.error('Generation error:', error)
+      alert('An error occurred while generating the design system.')
     }
   }
 
@@ -315,7 +336,7 @@ export default function GeneratePage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Palette className="h-8 w-8 text-primary" />
-             <span className="text-2xl font-bold">DesignAI</span>
+            <span className="text-2xl font-bold">DesignAI</span>
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/dashboard">
@@ -380,7 +401,7 @@ export default function GeneratePage() {
                     <SelectItem value="consumer">Consumer App</SelectItem>
                     <SelectItem value="enterprise">Enterprise</SelectItem>
                     <SelectItem value="agency">Agency / Creative</SelectItem>
-              </SelectContent>
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -443,82 +464,93 @@ export default function GeneratePage() {
           </Card>
 
           {/* Figma JSON Output Section */}
-          {generatedDesignSystem && (
+          {(generatedDesignSystem || isCreating) && (
             <Card className="border-2 shadow-lg border-primary/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Code2 className="h-5 w-5 text-primary" />
-                  Figma Format JSON Output
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                      Generating Your Design System...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-5 w-5 text-green-500" />
+                      Design System Generated Successfully!
+                    </>
+                  )}
                 </CardTitle>
                 <CardDescription>
-                  Copy or download the Figma-compatible JSON to use in your Figma designs.
+                  {isCreating
+                    ? 'Please wait while we create your custom design system...'
+                    : 'Your design system is ready! View the Figma-compatible JSON below or explore the full system.'
+                  }
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    onClick={handleGenerateFigmaJson}
-                    variant="outline"
-                    className="gap-2"
-                    disabled={!currentDesignSystem}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Generate Figma JSON
-                  </Button>
-                  <Button
-                    onClick={handleCopyJson}
-                    variant="outline"
-                    className="gap-2"
-                    disabled={!figmaJson}
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="h-4 w-4 text-green-500" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" />
-                        Copy JSON
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={handleDownloadJson}
-                    variant="outline"
-                    className="gap-2"
-                    disabled={!figmaJson}
-                  >
-                    <Download className="h-4 w-4" />
-                    Download JSON
-                  </Button>
-                  <Button
-                    onClick={handleViewDesignSystem}
-                    variant="default"
-                    className="gap-2 ml-auto"
-                  >
-                    View Full Design System
-                  </Button>
-                </div>
-
-                {/* JSON Preview */}
-                {figmaJson && (
-                  <div className="relative">
-                    <pre className="p-4 bg-muted rounded-lg overflow-auto max-h-[400px] text-sm font-mono">
-                      {JSON.stringify(figmaJson, null, 2)}
-                    </pre>
+              {!isCreating && generatedDesignSystem && (
+                <CardContent className="space-y-4">
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      onClick={handleGenerateFigmaJson}
+                      variant="outline"
+                      className="gap-2"
+                      disabled={!currentDesignSystem}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Regenerate Figma JSON
+                    </Button>
+                    <Button
+                      onClick={handleCopyJson}
+                      variant="outline"
+                      className="gap-2"
+                      disabled={!figmaJson}
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4 text-green-500" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copy JSON
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleDownloadJson}
+                      variant="outline"
+                      className="gap-2"
+                      disabled={!figmaJson}
+                    >
+                      <Download className="h-4 w-4" />
+                      Download JSON
+                    </Button>
+                    <Button
+                      onClick={handleViewDesignSystem}
+                      variant="default"
+                      className="gap-2 ml-auto"
+                    >
+                      View Full Design System
+                    </Button>
                   </div>
-                )}
 
-                {/* Placeholder when no JSON yet */}
-                {!figmaJson && currentDesignSystem && (
-                  <div className="p-8 border-2 border-dashed rounded-lg text-center text-muted-foreground">
-                    <Code2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Click "Generate Figma JSON" to create the Figma-compatible output</p>
-                  </div>
-                )}
-              </CardContent>
+                  {/* JSON Preview */}
+                  {figmaJson ? (
+                    <div className="relative">
+                      <pre className="p-4 bg-muted rounded-lg overflow-auto max-h-[400px] text-sm font-mono">
+                        {JSON.stringify(figmaJson, null, 2)}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div className="p-8 border-2 border-dashed rounded-lg text-center">
+                      <Loader2 className="h-12 w-12 mx-auto mb-3 animate-spin text-primary" />
+                      <p className="text-muted-foreground">Generating Figma JSON...</p>
+                    </div>
+                  )}
+                </CardContent>
+              )}
             </Card>
           )}
 

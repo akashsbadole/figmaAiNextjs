@@ -77,6 +77,20 @@ export class GeminiAI {
       return response.text()
     } catch (error) {
       console.error('Gemini AI error:', error)
+
+      // Check for specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          throw new Error('Invalid or missing Gemini API key. Please check your configuration.')
+        }
+        if (error.message.includes('quota') || error.message.includes('rate limit')) {
+          throw new Error('Gemini API quota exceeded. Please try again later.')
+        }
+        if (error.message.includes('model') || error.message.includes('not found')) {
+          throw new Error('Gemini model not available. Please check the model name.')
+        }
+      }
+
       throw new Error(`Failed to generate text: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
