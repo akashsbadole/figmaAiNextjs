@@ -1,9 +1,20 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Editor, { OnMount } from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
 import { useVFSStore } from '@/store/useVFSStore';
 import * as monaco from 'monaco-editor';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full bg-[#1e1e1e]">
+      <div className="text-gray-400 text-sm">Loading editor...</div>
+    </div>
+  ),
+});
+
+type OnMount = (editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof monaco) => void;
 
 interface CodeEditorProps {
   className?: string;

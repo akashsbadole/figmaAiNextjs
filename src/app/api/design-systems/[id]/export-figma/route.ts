@@ -18,7 +18,7 @@ import { figmaJsonToString } from '@/lib/figma-json-format'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId: clerkUserId } = await auth()
@@ -46,9 +46,12 @@ export async function GET(
       )
     }
 
+    // Await params
+    const { id } = await params
+
     // Get design system
     const designSystem = await db.designSystem.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!designSystem || (designSystem.userId !== user.id && !designSystem.isPublic)) {
