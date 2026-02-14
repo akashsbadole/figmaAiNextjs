@@ -344,8 +344,16 @@ export async function POST(request: NextRequest) {
 
     // Find or create user in database
     console.log('[Design System Generate] Looking up user in database...')
+    console.log('[Design System Generate] Clerk User ID:', clerkUserId)
+    console.log('[Design System Generate] Database URL exists:', !!process.env.DATABASE_URL)
+
     let user: Awaited<ReturnType<typeof db.user.findUnique>> | Awaited<ReturnType<typeof db.user.create>>
     try {
+      // Test database connection first
+      console.log('[Design System Generate] Testing database connection...')
+      await db.$connect()
+      console.log('[Design System Generate] Database connected successfully')
+
       user = await db.user.findUnique({
         where: { clerkId: clerkUserId }
       })
@@ -357,6 +365,7 @@ export async function POST(request: NextRequest) {
         const name = clerkUser?.fullName || clerkUser?.firstName || 'User'
         const imageUrl = clerkUser?.imageUrl
 
+        console.log('[Design System Generate] Creating user with email:', email)
         user = await db.user.create({
           data: {
             clerkId: clerkUserId,
@@ -371,10 +380,15 @@ export async function POST(request: NextRequest) {
       }
     } catch (dbError) {
       console.error('[Design System Generate] Database error during user lookup/creation:', dbError)
+      console.error('[Design System Generate] Error type:', dbError instanceof Error ? dbError.constructor.name : typeof dbError)
+      console.error('[Design System Generate] Error message:', dbError instanceof Error ? dbError.message : String(dbError))
+      console.error('[Design System Generate] Error stack:', dbError instanceof Error ? dbError.stack : 'No stack trace')
+
       return NextResponse.json(
         {
           error: 'Database error. Please try again later.',
-          details: process.env.NODE_ENV === 'development' ? (dbError instanceof Error ? dbError.message : 'Unknown error') : undefined
+          details: dbError instanceof Error ? dbError.message : 'Unknown database error',
+          errorType: dbError instanceof Error ? dbError.constructor.name : typeof dbError
         },
         { status: 500 }
       )

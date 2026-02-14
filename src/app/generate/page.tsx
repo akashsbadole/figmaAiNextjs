@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Palette, ArrowLeft, Sparkles, Loader2, Copy, Download, Check, Code2 } from 'lucide-react'
+import { Palette, ArrowLeft, Sparkles, Loader2, Copy, Download, Check, Code2, ChevronDown, ChevronUp } from 'lucide-react'
 
 // Figma format JSON structure type
 interface FigmaTextChild {
@@ -222,6 +222,21 @@ export default function GeneratePage() {
   const { isLoaded, isSignedIn } = useUser()
   const [prompt, setPrompt] = useState('')
   const [industry, setIndustry] = useState('')
+  const [colorScheme, setColorScheme] = useState('')
+  const [designStyle, setDesignStyle] = useState('')
+  const [targetPlatform, setTargetPlatform] = useState('')
+  const [accessibility, setAccessibility] = useState('')
+  const [brandPersonality, setBrandPersonality] = useState('')
+  const [componentStyle, setComponentStyle] = useState('')
+  const [layoutSystem, setLayoutSystem] = useState('')
+  const [typographyScale, setTypographyScale] = useState('')
+  const [spacingSystem, setSpacingSystem] = useState('')
+  const [animationStyle, setAnimationStyle] = useState('')
+  const [iconStyle, setIconStyle] = useState('')
+  const [shadowDepth, setShadowDepth] = useState('')
+  const [borderStyle, setBorderStyle] = useState('')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showUIPreferences, setShowUIPreferences] = useState(false)
   const [generatedDesignSystem, setGeneratedDesignSystem] = useState<any>(null)
   const [figmaJson, setFigmaJson] = useState<FigmaFormatItem[] | null>(null)
   const [copied, setCopied] = useState(false)
@@ -259,8 +274,51 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     if (!prompt.trim()) return
 
+    // Build enhanced prompt with all selections
+    let enhancedPrompt = prompt
+
+    if (colorScheme) {
+      enhancedPrompt += ` Use a ${colorScheme} color scheme.`
+    }
+    if (designStyle) {
+      enhancedPrompt += ` Design style should be ${designStyle}.`
+    }
+    if (targetPlatform) {
+      enhancedPrompt += ` Optimized for ${targetPlatform}.`
+    }
+    if (accessibility) {
+      enhancedPrompt += ` Accessibility level: ${accessibility}.`
+    }
+    if (brandPersonality) {
+      enhancedPrompt += ` Brand personality: ${brandPersonality}.`
+    }
+    if (componentStyle) {
+      enhancedPrompt += ` Component style: ${componentStyle}.`
+    }
+    if (layoutSystem) {
+      enhancedPrompt += ` Layout system: ${layoutSystem}.`
+    }
+    if (typographyScale) {
+      enhancedPrompt += ` Typography scale: ${typographyScale}.`
+    }
+    if (spacingSystem) {
+      enhancedPrompt += ` Spacing system: ${spacingSystem}.`
+    }
+    if (animationStyle) {
+      enhancedPrompt += ` Animation style: ${animationStyle}.`
+    }
+    if (iconStyle) {
+      enhancedPrompt += ` Icon style: ${iconStyle}.`
+    }
+    if (shadowDepth) {
+      enhancedPrompt += ` Shadow depth: ${shadowDepth}.`
+    }
+    if (borderStyle) {
+      enhancedPrompt += ` Border style: ${borderStyle}.`
+    }
+
     try {
-      const result = await createDesignSystem({ prompt, industry })
+      const result = await createDesignSystem({ prompt: enhancedPrompt, industry })
       if (result && result.id) {
         // Fetch the full design system to get all the data
         await fetchDesignSystemById(result.id)
@@ -384,9 +442,24 @@ export default function GeneratePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Prompt Input - Moved to top */}
+              <div className="space-y-2">
+                <Label htmlFor="prompt">Your Design Vision</Label>
+                <Textarea
+                  id="prompt"
+                  placeholder="Create a modern fintech dashboard with a professional blue color scheme, clean typography, and accessibility-friendly contrast ratios. The design should feel trustworthy and minimal..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="min-h-[150px] text-base resize-none"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Describe colors, typography style, mood, target audience, and any specific requirements.
+                </p>
+              </div>
+
               {/* Industry Selection */}
               <div className="space-y-2">
-                <Label htmlFor="industry">Industry (Optional)</Label>
+                <Label htmlFor="industry">Industry</Label>
                 <Select value={industry} onValueChange={setIndustry}>
                   <SelectTrigger id="industry">
                     <SelectValue placeholder="Select an industry for better results" />
@@ -405,20 +478,338 @@ export default function GeneratePage() {
                 </Select>
               </div>
 
-              {/* Prompt Input */}
-              <div className="space-y-2">
-                <Label htmlFor="prompt">Your Design Vision</Label>
-                <Textarea
-                  id="prompt"
-                  placeholder="Create a modern fintech dashboard with a professional blue color scheme, clean typography, and accessibility-friendly contrast ratios. The design should feel trustworthy and minimal..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="min-h-[150px] text-base resize-none"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Describe colors, typography style, mood, target audience, and any specific requirements.
-                </p>
+              {/* Advanced Options Toggle */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm">Advanced Options</h3>
+                      {(colorScheme || designStyle || targetPlatform || accessibility || brandPersonality) && (
+                        <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                          {[colorScheme, designStyle, targetPlatform, accessibility, brandPersonality].filter(Boolean).length} selected
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Fine-tune your design system with detailed preferences</p>
+                  </div>
+                  {showAdvanced ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  )}
+                </button>
               </div>
+
+              {/* Advanced Options Content */}
+              {showAdvanced && (
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Color Scheme */}
+                    <div className="space-y-2">
+                      <Label htmlFor="colorScheme">Color Scheme</Label>
+                      <Select value={colorScheme} onValueChange={setColorScheme}>
+                        <SelectTrigger id="colorScheme">
+                          <SelectValue placeholder="Choose color palette" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="monochromatic">Monochromatic</SelectItem>
+                          <SelectItem value="analogous">Analogous</SelectItem>
+                          <SelectItem value="complementary">Complementary</SelectItem>
+                          <SelectItem value="triadic">Triadic</SelectItem>
+                          <SelectItem value="warm">Warm Tones</SelectItem>
+                          <SelectItem value="cool">Cool Tones</SelectItem>
+                          <SelectItem value="vibrant">Vibrant & Bold</SelectItem>
+                          <SelectItem value="pastel">Soft Pastels</SelectItem>
+                          <SelectItem value="dark">Dark Mode First</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Design Style */}
+                    <div className="space-y-2">
+                      <Label htmlFor="designStyle">Design Style</Label>
+                      <Select value={designStyle} onValueChange={setDesignStyle}>
+                        <SelectTrigger id="designStyle">
+                          <SelectValue placeholder="Choose design approach" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="minimal">Minimal & Clean</SelectItem>
+                          <SelectItem value="modern">Modern & Sleek</SelectItem>
+                          <SelectItem value="playful">Playful & Fun</SelectItem>
+                          <SelectItem value="professional">Professional & Corporate</SelectItem>
+                          <SelectItem value="elegant">Elegant & Sophisticated</SelectItem>
+                          <SelectItem value="bold">Bold & Expressive</SelectItem>
+                          <SelectItem value="organic">Organic & Natural</SelectItem>
+                          <SelectItem value="futuristic">Futuristic & Tech</SelectItem>
+                          <SelectItem value="retro">Retro & Vintage</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Target Platform */}
+                    <div className="space-y-2">
+                      <Label htmlFor="targetPlatform">Target Platform</Label>
+                      <Select value={targetPlatform} onValueChange={setTargetPlatform}>
+                        <SelectTrigger id="targetPlatform">
+                          <SelectValue placeholder="Where will this be used?" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Universal</SelectItem>
+                          <SelectItem value="web">Web Application</SelectItem>
+                          <SelectItem value="mobile">Mobile App (iOS/Android)</SelectItem>
+                          <SelectItem value="desktop">Desktop Application</SelectItem>
+                          <SelectItem value="responsive">Responsive (All Devices)</SelectItem>
+                          <SelectItem value="tablet">Tablet Optimized</SelectItem>
+                          <SelectItem value="pwa">Progressive Web App</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Accessibility Level */}
+                    <div className="space-y-2">
+                      <Label htmlFor="accessibility">Accessibility</Label>
+                      <Select value={accessibility} onValueChange={setAccessibility}>
+                        <SelectTrigger id="accessibility">
+                          <SelectValue placeholder="Accessibility requirements" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Standard</SelectItem>
+                          <SelectItem value="wcag-aa">WCAG 2.1 AA Compliant</SelectItem>
+                          <SelectItem value="wcag-aaa">WCAG 2.1 AAA Compliant</SelectItem>
+                          <SelectItem value="high-contrast">High Contrast Mode</SelectItem>
+                          <SelectItem value="colorblind">Colorblind Friendly</SelectItem>
+                          <SelectItem value="screen-reader">Screen Reader Optimized</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Brand Personality - Full Width */}
+                  <div className="space-y-2">
+                    <Label htmlFor="brandPersonality">Brand Personality</Label>
+                    <Select value={brandPersonality} onValueChange={setBrandPersonality}>
+                      <SelectTrigger id="brandPersonality">
+                        <SelectValue placeholder="How should your brand feel?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Auto-detect</SelectItem>
+                        <SelectItem value="trustworthy">Trustworthy & Reliable</SelectItem>
+                        <SelectItem value="innovative">Innovative & Cutting-edge</SelectItem>
+                        <SelectItem value="friendly">Friendly & Approachable</SelectItem>
+                        <SelectItem value="luxurious">Luxurious & Premium</SelectItem>
+                        <SelectItem value="energetic">Energetic & Dynamic</SelectItem>
+                        <SelectItem value="calm">Calm & Peaceful</SelectItem>
+                        <SelectItem value="authoritative">Authoritative & Expert</SelectItem>
+                        <SelectItem value="creative">Creative & Artistic</SelectItem>
+                        <SelectItem value="sustainable">Sustainable & Eco-friendly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {/* UI/UX Preferences Toggle */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowUIPreferences(!showUIPreferences)}
+                  className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm">UI/UX Design Preferences</h3>
+                      {(componentStyle || layoutSystem || typographyScale || spacingSystem || animationStyle || iconStyle || shadowDepth || borderStyle) && (
+                        <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                          {[componentStyle, layoutSystem, typographyScale, spacingSystem, animationStyle, iconStyle, shadowDepth, borderStyle].filter(Boolean).length} selected
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Customize components, layout, typography, and visual elements</p>
+                  </div>
+                  {showUIPreferences ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  )}
+                </button>
+              </div>
+
+              {/* UI/UX Preferences Content */}
+              {showUIPreferences && (
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Component Style */}
+                    <div className="space-y-2">
+                      <Label htmlFor="componentStyle">Component Style</Label>
+                      <Select value={componentStyle} onValueChange={setComponentStyle}>
+                        <SelectTrigger id="componentStyle">
+                          <SelectValue placeholder="Choose component design" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="flat">Flat Design</SelectItem>
+                          <SelectItem value="neumorphic">Neumorphic (Soft UI)</SelectItem>
+                          <SelectItem value="glassmorphic">Glassmorphic (Frosted Glass)</SelectItem>
+                          <SelectItem value="material">Material Design</SelectItem>
+                          <SelectItem value="ios">iOS Native Style</SelectItem>
+                          <SelectItem value="fluent">Fluent Design</SelectItem>
+                          <SelectItem value="brutalist">Brutalist</SelectItem>
+                          <SelectItem value="skeuomorphic">Skeuomorphic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Layout System */}
+                    <div className="space-y-2">
+                      <Label htmlFor="layoutSystem">Layout System</Label>
+                      <Select value={layoutSystem} onValueChange={setLayoutSystem}>
+                        <SelectTrigger id="layoutSystem">
+                          <SelectValue placeholder="Choose layout approach" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="12-column">12 Column Grid</SelectItem>
+                          <SelectItem value="8-point">8-Point Grid System</SelectItem>
+                          <SelectItem value="4-point">4-Point Grid System</SelectItem>
+                          <SelectItem value="flexbox">Flexbox Based</SelectItem>
+                          <SelectItem value="css-grid">CSS Grid Based</SelectItem>
+                          <SelectItem value="container-queries">Container Queries</SelectItem>
+                          <SelectItem value="fluid">Fluid/Responsive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Typography Scale */}
+                    <div className="space-y-2">
+                      <Label htmlFor="typographyScale">Typography Scale</Label>
+                      <Select value={typographyScale} onValueChange={setTypographyScale}>
+                        <SelectTrigger id="typographyScale">
+                          <SelectValue placeholder="Choose type scale" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="minor-second">Minor Second (1.067)</SelectItem>
+                          <SelectItem value="major-second">Major Second (1.125)</SelectItem>
+                          <SelectItem value="minor-third">Minor Third (1.200)</SelectItem>
+                          <SelectItem value="major-third">Major Third (1.250)</SelectItem>
+                          <SelectItem value="perfect-fourth">Perfect Fourth (1.333)</SelectItem>
+                          <SelectItem value="golden-ratio">Golden Ratio (1.618)</SelectItem>
+                          <SelectItem value="custom-large">Large Scale (Headings)</SelectItem>
+                          <SelectItem value="custom-small">Compact Scale (Dense UI)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Spacing System */}
+                    <div className="space-y-2">
+                      <Label htmlFor="spacingSystem">Spacing System</Label>
+                      <Select value={spacingSystem} onValueChange={setSpacingSystem}>
+                        <SelectTrigger id="spacingSystem">
+                          <SelectValue placeholder="Choose spacing scale" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="4px">4px Base (Tight)</SelectItem>
+                          <SelectItem value="8px">8px Base (Standard)</SelectItem>
+                          <SelectItem value="16px">16px Base (Spacious)</SelectItem>
+                          <SelectItem value="fibonacci">Fibonacci Sequence</SelectItem>
+                          <SelectItem value="t-shirt">T-Shirt Sizes (XS-XL)</SelectItem>
+                          <SelectItem value="semantic">Semantic (Compact/Cozy/Comfortable)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Animation Style */}
+                    <div className="space-y-2">
+                      <Label htmlFor="animationStyle">Animation Style</Label>
+                      <Select value={animationStyle} onValueChange={setAnimationStyle}>
+                        <SelectTrigger id="animationStyle">
+                          <SelectValue placeholder="Choose animation approach" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="none">No Animations</SelectItem>
+                          <SelectItem value="subtle">Subtle & Minimal</SelectItem>
+                          <SelectItem value="smooth">Smooth & Fluid</SelectItem>
+                          <SelectItem value="bouncy">Bouncy & Playful</SelectItem>
+                          <SelectItem value="snappy">Snappy & Quick</SelectItem>
+                          <SelectItem value="elastic">Elastic & Dynamic</SelectItem>
+                          <SelectItem value="spring">Spring Physics</SelectItem>
+                          <SelectItem value="reduced-motion">Reduced Motion (A11y)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Icon Style */}
+                    <div className="space-y-2">
+                      <Label htmlFor="iconStyle">Icon Style</Label>
+                      <Select value={iconStyle} onValueChange={setIconStyle}>
+                        <SelectTrigger id="iconStyle">
+                          <SelectValue placeholder="Choose icon design" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="outline">Outline/Stroke</SelectItem>
+                          <SelectItem value="filled">Filled/Solid</SelectItem>
+                          <SelectItem value="duotone">Duotone</SelectItem>
+                          <SelectItem value="rounded">Rounded</SelectItem>
+                          <SelectItem value="sharp">Sharp/Angular</SelectItem>
+                          <SelectItem value="hand-drawn">Hand-drawn</SelectItem>
+                          <SelectItem value="3d">3D/Isometric</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Shadow Depth */}
+                    <div className="space-y-2">
+                      <Label htmlFor="shadowDepth">Shadow & Elevation</Label>
+                      <Select value={shadowDepth} onValueChange={setShadowDepth}>
+                        <SelectTrigger id="shadowDepth">
+                          <SelectValue placeholder="Choose shadow style" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="none">No Shadows (Flat)</SelectItem>
+                          <SelectItem value="subtle">Subtle Shadows</SelectItem>
+                          <SelectItem value="medium">Medium Depth</SelectItem>
+                          <SelectItem value="deep">Deep Shadows</SelectItem>
+                          <SelectItem value="dramatic">Dramatic Elevation</SelectItem>
+                          <SelectItem value="inner">Inner Shadows</SelectItem>
+                          <SelectItem value="colored">Colored Shadows</SelectItem>
+                          <SelectItem value="layered">Layered/Multiple</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Border Style */}
+                    <div className="space-y-2">
+                      <Label htmlFor="borderStyle">Border Style</Label>
+                      <Select value={borderStyle} onValueChange={setBorderStyle}>
+                        <SelectTrigger id="borderStyle">
+                          <SelectValue placeholder="Choose border approach" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="none">No Borders</SelectItem>
+                          <SelectItem value="subtle">Subtle Borders</SelectItem>
+                          <SelectItem value="prominent">Prominent Borders</SelectItem>
+                          <SelectItem value="rounded">Rounded Corners</SelectItem>
+                          <SelectItem value="pill">Pill Shaped</SelectItem>
+                          <SelectItem value="sharp">Sharp/Square</SelectItem>
+                          <SelectItem value="mixed">Mixed Radius</SelectItem>
+                          <SelectItem value="outlined">Outlined Style</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Example Prompts */}
               <div className="space-y-3">
