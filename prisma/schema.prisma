@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -351,7 +351,7 @@ model ComponentDependency {
   @@unique([componentId, dependsOnId])
 }
 
-// ============ A/B TESTING ============
+// ============ A/B_TESTING ============
 
 model ABTest {
   id                String                 @id @default(cuid())
