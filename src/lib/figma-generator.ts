@@ -1,4 +1,20 @@
 import { DesignSystem } from '@prisma/client'
+import {
+  FigmaJsonRoot,
+  FigmaJsonContainer,
+  FigmaJsonTextChild,
+  createContainer,
+  createTextChild,
+  normalizeContainer,
+  normalizeTextChild,
+  figmaJsonToString,
+  figmaJsonToBlob,
+  designSystemToFigmaJson,
+  FONT_WEIGHT_MAP
+} from './figma-json-format'
+
+// Re-export the Figma JSON format types for backward compatibility
+export type { FigmaJsonRoot, FigmaJsonContainer, FigmaJsonTextChild } from './figma-json-format'
 
 export interface FigmaColor {
   r: number
@@ -367,6 +383,41 @@ export function createFigmaInput(
   }
 }
 
+/**
+ * Generates the consistent Figma JSON format array
+ * This is the primary function for generating Figma-compatible JSON
+ * 
+ * @returns FigmaJsonRoot array with product items
+ */
+export function generateFigmaJsonFormat(): FigmaJsonRoot {
+  return [
+    createContainer(
+      'Item 1',
+      [
+        createTextChild('Product Item 1', 18, '#000000', 'Medium'),
+        createTextChild('$29.99', 16, '#18A0FB')
+      ],
+      { backgroundColor: '#FFFFFF', padding: 16, cornerRadius: 8 }
+    ),
+    createContainer(
+      'Item 2',
+      [
+        createTextChild('Product Item 2', 18, '#000000', 'Medium'),
+        createTextChild('$39.99', 16, '#18A0FB')
+      ],
+      { backgroundColor: '#FFFFFF', padding: 16, cornerRadius: 8 }
+    ),
+    createContainer(
+      'Item 3',
+      [
+        createTextChild('Product Item 3', 18, '#000000', 'Medium'),
+        createTextChild('$49.99', 16, '#18A0FB')
+      ],
+      { backgroundColor: '#FFFFFF', padding: 16, cornerRadius: 8 }
+    )
+  ]
+}
+
 export function generateFigmaFile(
   name: string,
   designSystem: {
@@ -381,19 +432,69 @@ export function generateFigmaFile(
   const colorStyles = generateColorStyles(designSystem.colors)
   const textStyles = generateTypographyStyles(designSystem.typography)
 
+  // Use the consistent Figma JSON format for product items
+  const productItemsData = generateFigmaJsonFormat()
+
   const mainFrame = createFigmaFrame(
     name,
     1440,
     900,
     '#f8fafc',
-    [
-      createFigmaText('Header/Title', name, 48, 48, 32, 'Inter', 700, '#1e293b'),
-      createFigmaText('Subtitle/Description', 'Design System Components', 48, 96, 16, 'Inter', 400, '#64748b'),
-      createFigmaCard('Sample Card', 48, 160, 320, 200, '#ffffff', 12, '0 4px 6px -1px rgba(0, 0, 0, 0.1)'),
-      createFigmaButton('Primary Button', 48, 400, 160, 48, 'Click Me', '#3b82f6', '#ffffff', 8),
-      createFigmaInput('Text Input', 48, 480, 320, 48, 'Enter text...', '#e2e8f0', '#ffffff')
-    ]
+    []
   )
+
+  let yPosition = 48
+
+  productItemsData.forEach((item, index) => {
+    if (item.type === 'container') {
+      const containerWidth = 320
+      const containerHeight = 120
+
+      const container = createFigmaCard(
+        item.name,
+        48 + (index * (containerWidth + 24)),
+        yPosition,
+        containerWidth,
+        containerHeight,
+        item.backgroundColor || '#ffffff',
+        item.cornerRadius || 8,
+        '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+      )
+
+      // Add padding to container
+      const padding = item.padding || 16
+      let childY = padding
+
+      if (item.children) {
+        item.children.forEach((child) => {
+          if (child.type === 'text') {
+            const fontWeight = FONT_WEIGHT_MAP[child.fontWeight || 'Regular'] || 400
+            const fontSize = child.fontSize || 14
+            const color = child.color || '#000000'
+
+            const textNode = createFigmaText(
+              `Text ${index}`,
+              child.text,
+              padding,
+              childY,
+              fontSize,
+              'Inter',
+              fontWeight,
+              color
+            )
+
+            container.children = container.children || []
+            container.children.push(textNode)
+
+            childY += fontSize * 1.5
+          }
+        })
+      }
+
+      mainFrame.children = mainFrame.children || []
+      mainFrame.children.push(container)
+    }
+  })
 
   return {
     name,
@@ -440,9 +541,158 @@ export function convertDesignSystemToFigma(
   })
 }
 
+export function convertDataToFigmaFile(data: any[]): FigmaFile {
+  const figmaFrame = createFigmaFrame(
+    'Product Items',
+    1440,
+    900,
+    '#f8fafc',
+    []
+  )
+
+  let yPosition = 48
+
+  // Normalize data to FigmaJsonRoot format first
+  const normalizedData: FigmaJsonRoot = data.map(item => normalizeContainer(item))
+
+  normalizedData.forEach((item, index) => {
+    if (item.type === 'container') {
+      const containerWidth = 320
+      const containerHeight = 120
+
+      const container = createFigmaCard(
+        item.name,
+        48 + (index * (containerWidth + 24)),
+        yPosition,
+        containerWidth,
+        containerHeight,
+        item.backgroundColor || '#ffffff',
+        item.cornerRadius || 8,
+        '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+      )
+
+      // Add padding to container
+      const padding = item.padding || 16
+      let childY = padding
+
+      if (item.children) {
+        item.children.forEach((child) => {
+          if (child.type === 'text') {
+            const fontWeight = FONT_WEIGHT_MAP[child.fontWeight || 'Regular'] || 400
+            const fontSize = child.fontSize || 14
+            const color = child.color || '#000000'
+
+            const textNode = createFigmaText(
+              `Text ${index}`,
+              child.text,
+              padding,
+              childY,
+              fontSize,
+              'Inter',
+              fontWeight,
+              color
+            )
+
+            container.children = container.children || []
+            container.children.push(textNode)
+
+            childY += fontSize * 1.5
+          }
+        })
+      }
+
+      figmaFrame.children = figmaFrame.children || []
+      figmaFrame.children.push(container)
+    }
+  })
+
+  return {
+    name: 'Product Items Design',
+    version: '1.0.0',
+    document: {
+      id: generateUUID(),
+      name: 'Document',
+      type: 'DOCUMENT',
+      children: [
+        {
+          id: generateUUID(),
+          name: 'Page 1',
+          type: 'CANVAS',
+          children: [figmaFrame]
+        }
+      ]
+    },
+    components: {},
+    styles: {}
+  }
+}
+
+/**
+ * Converts data array to the consistent Figma JSON format
+ * This is the primary function for generating Figma-compatible JSON output
+ * 
+ * @param data - Array of items to convert
+ * @returns FigmaJsonRoot array with consistent format
+ */
+export function convertDataToFigmaJson(data: any[]): FigmaJsonRoot {
+  if (!Array.isArray(data)) {
+    return []
+  }
+  
+  return data.map(item => normalizeContainer(item))
+}
+
+/**
+ * Generates Figma JSON format from a DesignSystem
+ * Uses the consistent format across the application
+ * 
+ * @param designSystem - DesignSystem from database
+ * @returns FigmaJsonRoot array
+ */
+export function convertDesignSystemToFigmaJson(designSystem: DesignSystem): FigmaJsonRoot {
+  const colors = JSON.parse(designSystem.colors || '{}')
+  const typography = JSON.parse(designSystem.typography || '{}')
+  const spacing = JSON.parse(designSystem.spacing || '{}')
+  const borderRadius = JSON.parse(designSystem.borderRadius || '{}')
+  const shadows = JSON.parse(designSystem.shadows || '{}')
+  const components = JSON.parse(designSystem.components || '{}')
+
+  return designSystemToFigmaJson({
+    name: designSystem.name,
+    description: designSystem.description || undefined,
+    colors,
+    typography,
+    spacing,
+    borderRadius,
+    shadows,
+    components
+  })
+}
+
 export function downloadFigmaFile(figmaFile: FigmaFile): Blob {
   const json = JSON.stringify(figmaFile, null, 2)
   return new Blob([json], { type: 'application/json' })
+}
+
+/**
+ * Downloads FigmaJsonRoot as a JSON file
+ * Uses the consistent format across the application
+ * 
+ * @param figmaJson - FigmaJsonRoot data
+ * @returns Blob for download
+ */
+export function downloadFigmaJsonFile(figmaJson: FigmaJsonRoot): Blob {
+  return figmaJsonToBlob(figmaJson)
+}
+
+/**
+ * Gets the consistent Figma JSON format as a string
+ * 
+ * @param figmaJson - FigmaJsonRoot data
+ * @returns JSON string
+ */
+export function getFigmaJsonString(figmaJson: FigmaJsonRoot): string {
+  return figmaJsonToString(figmaJson)
 }
 
 export function generateFigmaPluginTokens(designSystem: DesignSystem): object {

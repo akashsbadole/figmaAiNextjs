@@ -5,6 +5,19 @@
  */
 
 import { DesignSystem } from '@prisma/client'
+import {
+  FigmaJsonRoot,
+  FigmaJsonContainer,
+  FigmaJsonTextChild,
+  createContainer,
+  createTextChild,
+  designSystemToFigmaJson,
+  figmaJsonToString,
+  figmaJsonToBlob
+} from './figma-json-format'
+
+// Re-export the Figma JSON format types for backward compatibility
+export type { FigmaJsonRoot, FigmaJsonContainer, FigmaJsonTextChild } from './figma-json-format'
 
 // Types for Tokens Studio format
 export interface TokensStudioColor {
@@ -304,4 +317,53 @@ export function createTokensStudioExport(designSystem: DesignSystem): object {
     ...generateTokensStudioMeta(designSystem),
     ...convertToTokensStudio(designSystem)
   }
+}
+
+/**
+ * Create Figma JSON format export (consistent format)
+ * This is the primary function for generating Figma-compatible JSON
+ * 
+ * @param designSystem - Design system from database
+ * @returns FigmaJsonRoot array
+ */
+export function createFigmaJsonExport(designSystem: DesignSystem): FigmaJsonRoot {
+  const colors = JSON.parse(designSystem.colors || '{}')
+  const typography = JSON.parse(designSystem.typography || '{}')
+  const spacing = JSON.parse(designSystem.spacing || '{}')
+  const borderRadius = JSON.parse(designSystem.borderRadius || '{}')
+  const shadows = JSON.parse(designSystem.shadows || '{}')
+  const components = JSON.parse(designSystem.components || '{}')
+
+  return designSystemToFigmaJson({
+    name: designSystem.name,
+    description: designSystem.description || undefined,
+    colors,
+    typography,
+    spacing,
+    borderRadius,
+    shadows,
+    components
+  })
+}
+
+/**
+ * Get Figma JSON format as string
+ * 
+ * @param designSystem - Design system from database
+ * @returns JSON string
+ */
+export function getFigmaJsonString(designSystem: DesignSystem): string {
+  const figmaJson = createFigmaJsonExport(designSystem)
+  return figmaJsonToString(figmaJson)
+}
+
+/**
+ * Create a downloadable Blob from design system in Figma JSON format
+ * 
+ * @param designSystem - Design system from database
+ * @returns Blob for download
+ */
+export function createFigmaJsonBlob(designSystem: DesignSystem): Blob {
+  const figmaJson = createFigmaJsonExport(designSystem)
+  return figmaJsonToBlob(figmaJson)
 }

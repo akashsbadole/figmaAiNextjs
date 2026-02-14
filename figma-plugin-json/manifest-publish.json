@@ -1,0 +1,22 @@
+{
+  "name": "JSON to Figma - System Design Generator",
+  "id": "json-to-figma-system-design",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  },
+  "permissions": [],
+  "build": "",
+  "version": "1.0.0",
+  "description": "Transform JSON data into professional Figma designs. Generate system designs, templates, forms, dashboards, and UI components instantly.",
+  "categories": [
+    "productivity",
+    "import-export",
+    "prototyping"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

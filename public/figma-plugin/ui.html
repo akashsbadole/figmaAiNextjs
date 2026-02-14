@@ -116,6 +116,55 @@
       background: rgba(100, 255, 218, 0.1);
     }
 
+    .btn-export {
+      background: #18A0FB;
+      color: #ffffff;
+      margin-top: 10px;
+    }
+
+    .btn-export:hover {
+      background: #0d8de6;
+      transform: translateY(-1px);
+    }
+
+    .btn-export:disabled {
+      background: #2d3a5f;
+      color: #5a6a8a;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #2d3a5f;
+    }
+
+    .divider::before {
+      left: 0;
+    }
+
+    .divider::after {
+      right: 0;
+    }
+
+    .divider span {
+      background: #1a1a2e;
+      padding: 0 12px;
+      color: #5a6a8a;
+      font-size: 12px;
+    }
+
     .spinner {
       width: 16px;
       height: 16px;
@@ -201,6 +250,13 @@
       margin-bottom: 8px;
     }
 
+    .preview-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: #8892b0;
+    }
+
     .color-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -245,11 +301,146 @@
       Load Sample Design
     </button>
 
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <button class="btn btn-export" id="exportBtn">
+      <span class="btn-text">Export Selection to JSON</span>
+    </button>
+
     <div class="status" id="status"></div>
     <div class="progress-list" id="progress"></div>
     <div class="preview" id="preview"></div>
   </div>
 
-  <script src="code.js"></script>
+  <script>
+    // UI Event Handlers
+    const importBtn = document.getElementById('importBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const statusEl = document.getElementById('status');
+    const progressEl = document.getElementById('progress');
+    const previewEl = document.getElementById('preview');
+
+    // Import button handler
+    importBtn.addEventListener('click', () => {
+      const apiUrl = document.getElementById('apiUrl').value || 'http://localhost:3000';
+      const designId = document.getElementById('designId').value;
+      
+      if (!designId) {
+        showStatus('error', 'Please enter a Design System ID');
+        return;
+      }
+      
+      importBtn.disabled = true;
+      importBtn.querySelector('.btn-text').textContent = 'Importing...';
+      
+      parent.postMessage({ pluginMessage: { type: 'import-design', apiUrl, designId } }, '*');
+    });
+
+    // Sample button handler
+    sampleBtn.addEventListener('click', () => {
+      sampleBtn.disabled = true;
+      parent.postMessage({ pluginMessage: { type: 'load-sample' } }, '*');
+    });
+
+    // Export button handler
+    exportBtn.addEventListener('click', () => {
+      exportBtn.disabled = true;
+      exportBtn.querySelector('.btn-text').textContent = 'Exporting...';
+      parent.postMessage({ pluginMessage: { type: 'export-selection' } }, '*');
+    });
+
+    // Listen for messages from plugin code
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      
+      if (msg.type === 'update-status') {
+        showStatus(msg.status, msg.message);
+        resetButtons();
+      }
+      
+      if (msg.type === 'update-progress') {
+        addProgressItem(msg.step, msg.message);
+      }
+      
+      if (msg.type === 'show-preview') {
+        showPreview(msg.preview);
+      }
+      
+      if (msg.type === 'export-json') {
+        downloadJSON(msg.json);
+        resetButtons();
+      }
+    };
+
+    // Show status message
+    function showStatus(type, message) {
+      statusEl.className = `status ${type}`;
+      
+      if (type === 'loading') {
+        statusEl.innerHTML = `<div class="spinner"></div><span>${message}</span>`;
+      } else {
+        statusEl.textContent = message;
+      }
+    }
+
+    // Add progress item
+    function addProgressItem(step, message) {
+      const existingItem = document.querySelector(`[data-step="${step}"]`);
+      if (existingItem) {
+        existingItem.classList.add('done');
+        existingItem.querySelector('.icon').innerHTML = '✓';
+      }
+      
+      const item = document.createElement('div');
+      item.className = 'progress-item';
+      item.setAttribute('data-step', step);
+      item.innerHTML = `<span class="icon">○</span><span>${message}</span>`;
+      progressEl.appendChild(item);
+    }
+
+    // Show preview
+    function showPreview(preview) {
+      previewEl.className = 'preview show';
+      previewEl.innerHTML = `
+        <div class="preview-title">${preview.name}</div>
+        <div class="preview-stats">
+          <span>${preview.colorCount} colors</span>
+          <span>${preview.typeScaleCount} type sizes</span>
+        </div>
+      `;
+    }
+
+    // Download JSON file
+    function downloadJSON(jsonData) {
+      const jsonString = JSON.stringify(jsonData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `figma-export-${timestamp}.json`;
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showStatus('success', `Downloaded: ${filename}`);
+    }
+
+    // Reset button states
+    function resetButtons() {
+      importBtn.disabled = false;
+      importBtn.querySelector('.btn-text').textContent = 'Import & Create Design';
+      sampleBtn.disabled = false;
+      exportBtn.disabled = false;
+      exportBtn.querySelector('.btn-text').textContent = 'Export Selection to JSON';
+    }
+  </script>
 </body>
 </html>

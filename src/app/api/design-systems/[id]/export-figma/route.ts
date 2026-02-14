@@ -5,12 +5,16 @@ import {
   convertDesignSystemToFigma, 
   downloadFigmaFile, 
   generateFigmaPluginTokens,
+  convertDesignSystemToFigmaJson,
   FigmaFile 
 } from '@/lib/figma-generator'
 import { 
   createTokensStudioExport,
+  createFigmaJsonExport,
+  getFigmaJsonString,
   convertToTokensStudio 
 } from '@/lib/figmagic-exporter'
+import { figmaJsonToString } from '@/lib/figma-json-format'
 
 export async function GET(
   request: NextRequest,
@@ -79,7 +83,19 @@ export async function GET(
       })
     }
 
-    // Default: Generate Figma JSON format
+    if (format === 'figma-json') {
+      // Use the consistent Figma JSON format (array of containers)
+      const figmaJson = createFigmaJsonExport(designSystem)
+      
+      return new NextResponse(figmaJsonToString(figmaJson), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="${designSystem.name.replace(/\s+/g, '-').toLowerCase()}.figma.json"`,
+        },
+      })
+    }
+
+    // Default: Generate full Figma file format (for backward compatibility)
     const figmaFile: FigmaFile = convertDesignSystemToFigma(designSystem, includeComponents)
     
     return new NextResponse(JSON.stringify(figmaFile, null, 2), {

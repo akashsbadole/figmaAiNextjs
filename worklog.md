@@ -1,6 +1,6 @@
 ---
 Task ID: Initial Setup
-Agent: Z.ai Code
+Agent: .ai Code
 Task: Build AI-Powered Design System Generator MVP
 
 Work Log:
@@ -29,7 +29,7 @@ Stage Summary:
 ---
 
 Task ID: 2-a
-Agent: Z.ai Code
+Agent: .ai Code
 Task: Add Clerk Authentication and Gemini AI Integration
 
 Work Log:
@@ -52,7 +52,7 @@ Stage Summary:
 ---
 
 Task ID: 2-b
-Agent: Z.ai Code
+Agent: .ai Code
 Task: Migrate Design System Generation to Gemini AI
 
 Work Log:
@@ -70,7 +70,7 @@ Stage Summary:
 ---
 
 Task ID: 2-c
-Agent: Z.ai Code
+Agent: .ai Code
 Task: Create AI Agent Chat Interface for UI/UX Consulting
 
 Work Log:
@@ -90,7 +90,7 @@ Stage Summary:
 ---
 
 Task ID: 2-d
-Agent: Z.ai Code
+Agent: .ai Code
 Task: Build Figma Design Generation Feature
 
 Work Log:
@@ -110,7 +110,7 @@ Stage Summary:
 ---
 
 Task ID: 2-e
-Agent: Z.ai Code
+Agent: .ai Code
 Task: Create System Design Assistant Feature
 
 Work Log:
@@ -130,7 +130,7 @@ Stage Summary:
 ---
 
 Task ID: 2-f
-Agent: Z.ai Code
+Agent: .ai Code
 Task: Update UI with New Features and Clerk Integration
 
 Work Log:

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/db'
 import { auth } from '@clerk/nextjs/server'
-
-const db = prisma as any
 
 // GET - Fetch design history for user
 export async function GET(request: NextRequest) {
@@ -20,16 +18,14 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || undefined
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    // Find user
+    // Find user in database
     const user = await db.user.findUnique({
       where: { clerkId: clerkUserId }
     })
 
+    // If user doesn't exist yet, return empty history
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ history: [] })
     }
 
     // Fetch design history

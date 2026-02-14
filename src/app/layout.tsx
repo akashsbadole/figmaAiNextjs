@@ -15,24 +15,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DesignAI - AI-Powered Design System Generator",
-  description: "Transform your design vision into production-ready design systems with AI. Generate colors, typography, spacing, and components in minutes.",
-  keywords: ["DesignAI", "AI Design System", "Figma", "UI/UX", "Design Tokens", "Tailwind CSS", "Gemini AI"],
+  title: "DesignAI - AI-Powered Design System Generator & Figma AI Agent",
+  description: "Transform your vision into production-ready design systems with our Figma AI agent. Automate design tokens, typography, and component libraries directly within your workflow.",
+  keywords: [
+    "DesignAI", 
+    "AI Design System", 
+    "Figma AI Agent", 
+    "AI UI Design", 
+    "Figma Automation", 
+    "Design Tokens", 
+    "Tailwind CSS", 
+    "Gemini AI"
+  ],
   authors: [{ name: "DesignAI Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "./logo.png",
   },
   openGraph: {
-    title: "DesignAI - AI-Powered Design System Generator",
-    description: "Transform your design vision into production-ready design systems with AI",
-    url: "https://designai.z.ai",
+    title: "DesignAI - Your Autonomous Figma AI Agent",
+    description: "Meet the AI agent that builds your design system for you. From Figma variables to production code, DesignAI handles the heavy lifting.",
+    url: "#",
     siteName: "DesignAI",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DesignAI - AI-Powered Design System Generator",
-    description: "Transform your design vision into production-ready design systems with AI",
+    title: "DesignAI - Figma AI Agent for Design Systems",
+    description: "Stop building design systems manually. Use our AI agent to generate components and tokens in Figma instantly.",
   },
 };
 

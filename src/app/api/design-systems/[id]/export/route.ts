@@ -3,9 +3,11 @@ import { db } from '@/lib/db'
 import { 
   convertDesignSystemToFigma, 
   generateFigmaPluginTokens,
+  convertDesignSystemToFigmaJson,
   FigmaFile 
 } from '@/lib/figma-generator'
-import { createTokensStudioExport } from '@/lib/figmagic-exporter'
+import { createTokensStudioExport, createFigmaJsonExport } from '@/lib/figmagic-exporter'
+import { figmaJsonToString, FigmaJsonRoot } from '@/lib/figma-json-format'
 
 interface ExportOptions {
   format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json' | 'tokens-studio'
@@ -287,8 +289,9 @@ export async function GET(
         filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}-figma-tokens.json`
         break
       case 'figma-json':
-        const figmaFile = convertDesignSystemToFigma(designSystem)
-        content = JSON.stringify(figmaFile, null, 2)
+        // Use the consistent Figma JSON format (array of containers)
+        const figmaJson = createFigmaJsonExport(designSystem)
+        content = figmaJsonToString(figmaJson)
         contentType = 'application/json'
         filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}.figma.json`
         break

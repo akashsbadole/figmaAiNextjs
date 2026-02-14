@@ -1,7 +1,8 @@
 // System Design Generator - Figma Plugin
 // Fetches design system from your app and creates Figma elements
+// Also exports Figma selections to JSON
 
-figma.showUI(ui.html, { width: 360, height: 480 });
+figma.showUI(ui.html, { width: 360, height: 520 });
 
 // Store fetched design data
 let designData = null;
@@ -18,6 +19,8 @@ figma.ui.onmessage = async (msg) => {
     await createTypographyStyles();
   } else if (msg.type === 'create-components') {
     await createComponentFrames();
+  } else if (msg.type === 'export-selection') {
+    await exportSelectionToJSON();
   } else if (msg.type === 'close') {
     figma.closePlugin();
   }
@@ -326,4 +329,259 @@ function showPreview(data) {
     typeScaleCount: Object.keys(data.typography?.fontSize || {}).length
   };
   figma.ui.postMessage({ type: 'show-preview', preview });
+}
+
+// ============================================
+// JSON EXPORT FUNCTIONALITY
+// ============================================
+
+// Export selected Figma elements to JSON
+async function exportSelectionToJSON() {
+  const selection = figma.currentPage.selection;
+  
+  if (selection.length === 0) {
+    updateStatus('error', 'Please select at least one element to export');
+    return;
+  }
+  
+  updateStatus('loading', 'Generating JSON from selection...');
+  
+  try {
+    const jsonOutput = [];
+    
+    for (const node of selection) {
+      const item = await processNode(node);
+      if (item) {
+        jsonOutput.push(item);
+      }
+    }
+    
+    // Send JSON to UI for download
+    figma.ui.postMessage({ 
+      type: 'export-json', 
+      json: jsonOutput 
+    });
+    
+    updateStatus('success', `Exported ${jsonOutput.length} item(s) successfully!`);
+    
+  } catch (error) {
+    updateStatus('error', `Export error: ${error.message}`);
+  }
+}
+
+// Process a Figma node and convert to JSON structure
+async function processNode(node) {
+  // Only process frames and groups as containers
+  if (node.type === 'FRAME' || node.type === 'GROUP' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
+    return await processContainerNode(node);
+  }
+  
+  // For other nodes, wrap them in a container
+  return await processContainerNode(node, true);
+}
+
+// Process a container node (Frame, Group, Component, Instance)
+async function processContainerNode(node, forceWrap = false) {
+  const container = {
+    name: node.name || 'Unnamed Container',
+    type: 'container',
+    backgroundColor: getBackgroundColor(node),
+    padding: getPadding(node),
+    cornerRadius: getCornerRadius(node),
+    children: []
+  };
+  
+  // Process children
+  if ('children' in node && node.children.length > 0) {
+    for (const child of node.children) {
+      const childItem = await processChildNode(child);
+      if (childItem) {
+        container.children.push(childItem);
+      }
+    }
+  }
+  
+  return container;
+}
+
+// Process child nodes (text elements and nested containers)
+async function processChildNode(node) {
+  // Handle text nodes
+  if (node.type === 'TEXT') {
+    return await processTextNode(node);
+  }
+  
+  // Handle nested frames/groups as containers
+  if (node.type === 'FRAME' || node.type === 'GROUP' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
+    return await processContainerNode(node);
+  }
+  
+  // Handle rectangles and other shapes with text-like properties
+  if (node.type === 'RECTANGLE' || node.type === 'ELLIPSE' || node.type === 'POLYGON' || node.type === 'STAR') {
+    // Check if it has a name suggesting it's a text background
+    return {
+      type: 'shape',
+      name: node.name || 'Shape',
+      backgroundColor: getBackgroundColor(node),
+      cornerRadius: getCornerRadius(node),
+      width: node.width,
+      height: node.height
+    };
+  }
+  
+  // Handle vector nodes
+  if (node.type === 'VECTOR' || node.type === 'LINE' || node.type === 'BOOLEAN_OPERATION') {
+    return {
+      type: 'vector',
+      name: node.name || 'Vector',
+      backgroundColor: getBackgroundColor(node)
+    };
+  }
+  
+  return null;
+}
+
+// Process text node to JSON structure
+async function processTextNode(node) {
+  // Load font to ensure we can read properties
+  try {
+    await figma.loadFontAsync(node.fontName);
+  } catch (e) {
+    // Font load failed, use defaults
+  }
+  
+  const textItem = {
+    type: 'text',
+    text: node.characters || '',
+    fontSize: typeof node.fontSize === 'number' ? node.fontSize : 16,
+    color: getTextColor(node)
+  };
+  
+  // Add fontWeight if available
+  if (node.fontWeight) {
+    textItem.fontWeight = getFontWeightName(node.fontWeight);
+  }
+  
+  // Add optional properties
+  if (node.textAlignHorizontal) {
+    textItem.textAlign = node.textAlignHorizontal.toLowerCase();
+  }
+  
+  if (node.lineHeight && node.lineHeight.value) {
+    textItem.lineHeight = node.lineHeight.value;
+  }
+  
+  if (node.letterSpacing && node.letterSpacing.value) {
+    textItem.letterSpacing = node.letterSpacing.value;
+  }
+  
+  return textItem;
+}
+
+// Helper: Get background color as hex string
+function getBackgroundColor(node) {
+  if (!('fills' in node) || !node.fills || node.fills.length === 0) {
+    return '#FFFFFF';
+  }
+  
+  // Find the first visible solid fill
+  for (const fill of node.fills) {
+    if (fill.type === 'SOLID' && fill.visible !== false) {
+      return rgbToHex(fill.color, fill.opacity);
+    }
+  }
+  
+  return '#FFFFFF';
+}
+
+// Helper: Get text color as hex string
+function getTextColor(node) {
+  if (!('fills' in node) || !node.fills || node.fills.length === 0) {
+    return '#000000';
+  }
+  
+  // Find the first visible solid fill
+  for (const fill of node.fills) {
+    if (fill.type === 'SOLID' && fill.visible !== false) {
+      return rgbToHex(fill.color, fill.opacity);
+    }
+  }
+  
+  return '#000000';
+}
+
+// Helper: Get padding from node
+function getPadding(node) {
+  if ('paddingLeft' in node) {
+    // Check if all padding values are equal
+    const { paddingLeft, paddingRight, paddingTop, paddingBottom } = node;
+    if (paddingLeft === paddingRight && paddingLeft === paddingTop && paddingLeft === paddingBottom) {
+      return paddingLeft || 0;
+    }
+    // Return object with individual values if different
+    return {
+      top: paddingTop || 0,
+      right: paddingRight || 0,
+      bottom: paddingBottom || 0,
+      left: paddingLeft || 0
+    };
+  }
+  return 0;
+}
+
+// Helper: Get corner radius
+function getCornerRadius(node) {
+  if ('cornerRadius' in node && node.cornerRadius !== figma.mixed) {
+    return node.cornerRadius || 0;
+  }
+  
+  // Check for individual corner radii
+  if ('topLeftRadius' in node) {
+    const { topLeftRadius, topRightRadius, bottomRightRadius, bottomLeftRadius } = node;
+    if (topLeftRadius === topRightRadius && topLeftRadius === bottomRightRadius && topLeftRadius === bottomLeftRadius) {
+      return topLeftRadius || 0;
+    }
+    // Return object if corners are different
+    return {
+      topLeft: topLeftRadius || 0,
+      topRight: topRightRadius || 0,
+      bottomRight: bottomRightRadius || 0,
+      bottomLeft: bottomLeftRadius || 0
+    };
+  }
+  
+  return 0;
+}
+
+// Helper: Convert RGB to hex string
+function rgbToHex(color, opacity = 1) {
+  if (!color) return '#000000';
+  
+  const r = Math.round((color.r * 255) * opacity);
+  const g = Math.round((color.g * 255) * opacity);
+  const b = Math.round((color.b * 255) * opacity);
+  
+  const toHex = (n) => {
+    const hex = Math.min(255, Math.max(0, n)).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+}
+
+// Helper: Get font weight name from numeric value
+function getFontWeightName(weight) {
+  const weightMap = {
+    100: 'Thin',
+    200: 'ExtraLight',
+    300: 'Light',
+    400: 'Regular',
+    500: 'Medium',
+    600: 'SemiBold',
+    700: 'Bold',
+    800: 'ExtraBold',
+    900: 'Black'
+  };
+  
+  return weightMap[weight] || 'Medium';
 }

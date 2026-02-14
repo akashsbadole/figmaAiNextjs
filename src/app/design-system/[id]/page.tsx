@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useDesignSystemStore, type ButtonComponentStyles, type ButtonSizesStyles, type CardComponent, type InputComponent, type ModalComponent } from '@/store/useDesignSystemStore'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -67,10 +68,14 @@ interface Shadows {
 }
 
 interface Components {
-  button: any
-  card: any
-  input: any
-  modal: any
+  button: {
+    variants: Record<string, ButtonComponentStyles>
+    sizes: Record<string, ButtonSizesStyles>
+    borderRadius: string
+  }
+  card: CardComponent
+  input: InputComponent
+  modal: ModalComponent
 }
 
 interface DesignSystem {
@@ -93,34 +98,19 @@ interface DesignSystem {
 export default function DesignSystemPreviewPage() {
   const params = useParams()
   const router = useRouter()
-  const [designSystem, setDesignSystem] = useState<DesignSystem | null>(null)
-  const [loading, setLoading] = useState(true)
   const [copiedValue, setCopiedValue] = useState<string | null>(null)
+  const { currentDesignSystem, isLoadingSingle, singleError, fetchDesignSystemById, exportDesignSystem, clearCurrentDesignSystem } = useDesignSystemStore()
+  const id = params.id as string
 
   useEffect(() => {
-    const fetchDesignSystem = async () => {
-      const id = params.id
-      if (!id) {
-        setLoading(false)
-        return
-      }
-      
-      try {
-        const response = await fetch(`/api/design-systems/${id}`)
-        if (!response.ok) throw new Error('Failed to fetch design system')
-        const data = await response.json()
-        setDesignSystem(data)
-      } catch (error) {
-        console.error('Error fetching design system:', error)
-        alert('Failed to load design system')
-        router.push('/')
-      } finally {
-        setLoading(false)
-      }
+    if (id) {
+      fetchDesignSystemById(id)
     }
     
-    fetchDesignSystem()
-  }, [params.id, router])
+    return () => {
+      clearCurrentDesignSystem()
+    }
+  }, [id, fetchDesignSystemById, clearCurrentDesignSystem])
 
   const copyToClipboard = async (value: string, label: string) => {
     await navigator.clipboard.writeText(value)
@@ -136,27 +126,24 @@ export default function DesignSystemPreviewPage() {
   }
 
   const handleImportToFigma = async () => {
-    if (!designSystem) return
+    if (!currentDesignSystem) return
     
     try {
-      const response = await fetch(`/api/design-systems/${params.id}/export?format=tokens-studio`)
-      if (!response.ok) throw new Error('Export failed')
+      const tokensData = await exportDesignSystem(id, 'tokens-studio')
+      if (!tokensData) throw new Error('Export failed')
       
-      const tokensData = await response.json()
+      const parsedTokens = JSON.parse(tokensData)
       
-      // Open Figma with tokens data (this would use Figma REST API in production)
-      // For now, we'll download the tokens and provide instructions
-      const blob = new Blob([JSON.stringify(tokensData, null, 2)], { type: 'application/json' })
+      const blob = new Blob([JSON.stringify(parsedTokens, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}-figma-tokens.json`
+      a.download = `${currentDesignSystem.name.replace(/\s+/g, '-').toLowerCase()}-figma-tokens.json`
       document.body.appendChild(a)
       a.click()
       URL.revokeObjectURL(url)
       document.body.removeChild(a)
       
-      // Open Figma new file URL
       window.open('https://www.figma.com/files', '_blank')
       
       alert('Tokens downloaded! Install Tokens Studio plugin in Figma and import the JSON file.')
@@ -167,26 +154,10 @@ export default function DesignSystemPreviewPage() {
   }
 
   const handleExport = async (format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json' | 'tokens-studio') => {
-    try {
-      const response = await fetch(`/api/design-systems/${params.id}/export?format=${format}`)
-      if (!response.ok) throw new Error('Export failed')
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '') || `export.${format}`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (error) {
-      console.error('Export error:', error)
-      alert('Failed to export design system')
-    }
+    await exportDesignSystem(id, format)
   }
 
-  if (loading) {
+  if (isLoadingSingle) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -197,7 +168,18 @@ export default function DesignSystemPreviewPage() {
     )
   }
 
-  if (!designSystem) {
+  if (singleError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-lg text-destructive">Error: {singleError}</p>
+          <Button onClick={() => fetchDesignSystemById(id)}>Try Again</Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentDesignSystem) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-lg text-muted-foreground">Design system not found</p>
@@ -205,7 +187,7 @@ export default function DesignSystemPreviewPage() {
     )
   }
 
-  const { colors, typography, spacing, borderRadius, shadows, components } = designSystem
+  const { colors, typography, spacing, borderRadius, shadows, components } = currentDesignSystem
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -220,13 +202,13 @@ export default function DesignSystemPreviewPage() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold">{designSystem.name}</h1>
+                <h1 className="text-2xl font-bold">{currentDesignSystem.name}</h1>
                 <div className="flex items-center gap-2 mt-1">
-                  {designSystem.industry && (
-                    <Badge variant="secondary">{designSystem.industry}</Badge>
+                  {currentDesignSystem.industry && (
+                    <Badge variant="secondary">{currentDesignSystem.industry}</Badge>
                   )}
                   <p className="text-sm text-muted-foreground">
-                    Created {new Date(designSystem.createdAt || '').toLocaleDateString()}
+                    Created {new Date(currentDesignSystem.createdAt || '').toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -280,12 +262,12 @@ export default function DesignSystemPreviewPage() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <code className="text-xs bg-background px-2 py-1 rounded flex-1 font-mono">
-                    {designSystem.id}
+                    {currentDesignSystem.id}
                   </code>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => copyToClipboard(designSystem.id, 'design-id')}
+                    onClick={() => copyToClipboard(currentDesignSystem.id, 'design-id')}
                   >
                     {copiedValue === 'design-id' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
@@ -601,7 +583,7 @@ export default function DesignSystemPreviewPage() {
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold">Variants</h4>
                   <div className="flex flex-wrap gap-3">
-                    {Object.entries(components.button.variants).map(([variant, styles]: [string, any]) => (
+                    {Object.entries(components.button.variants).map(([variant, styles]) => (
                       <button
                         key={variant}
                         className="px-4 py-2 rounded-md font-medium capitalize"
@@ -618,7 +600,7 @@ export default function DesignSystemPreviewPage() {
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold">Sizes</h4>
                   <div className="flex flex-wrap items-center gap-3">
-                    {Object.entries(components.button.sizes).map(([size, styles]: [string, any]) => (
+                    {Object.entries(components.button.sizes).map(([size, styles]) => (
                       <button
                         key={size}
                         className="rounded-md font-medium capitalize"

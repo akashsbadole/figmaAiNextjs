@@ -1,0 +1,382 @@
+{
+  "name": "Product Items Design",
+  "version": "1.0.0",
+  "document": {
+    "id": "95d1e315-265a-4c9d-a3fc-f2f9e4736bcf",
+    "name": "Document",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "60f4792c-9f46-4c87-a696-0705d215db0d",
+        "name": "Page 1",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "8e181d3a-dc6e-4e22-82ef-8839618f95c4",
+            "name": "Product Items",
+            "type": "FRAME",
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 0,
+              "width": 1440,
+              "height": 900
+            },
+            "fills": [
+              {
+                "type": "SOLID",
+                "visible": true,
+                "opacity": 1,
+                "color": {
+                  "r": 0.9725490196078431,
+                  "g": 0.9803921568627451,
+                  "b": 0.9882352941176471,
+                  "a": 1
+                }
+              }
+            ],
+            "children": [
+              {
+                "id": "4f6cdcb0-a2df-49a4-a25e-30634f1350a3",
+                "name": "Item 1",
+                "type": "FRAME",
+                "absoluteBoundingBox": {
+                  "x": 48,
+                  "y": 48,
+                  "width": 320,
+                  "height": 120
+                },
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "visible": true,
+                    "opacity": 1,
+                    "color": {
+                      "r": 1,
+                      "g": 1,
+                      "b": 1,
+                      "a": 1
+                    }
+                  }
+                ],
+                "cornerRadius": 8,
+                "effects": [
+                  {
+                    "type": "DROP_SHADOW",
+                    "visible": true,
+                    "radius": 10,
+                    "color": {
+                      "r": 0,
+                      "g": 0,
+                      "b": 0,
+                      "a": 0.1
+                    },
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    }
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "24ca0771-3af6-4abb-ad3f-d29e952f7e80",
+                    "name": "Text 0",
+                    "type": "TEXT",
+                    "absoluteBoundingBox": {
+                      "x": 16,
+                      "y": 16,
+                      "width": 200,
+                      "height": 27
+                    },
+                    "fills": [
+                      {
+                        "type": "SOLID",
+                        "visible": true,
+                        "opacity": 1,
+                        "color": {
+                          "r": 0,
+                          "g": 0,
+                          "b": 0,
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 500,
+                      "fontSize": 18,
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "TOP",
+                      "letterSpacing": 0,
+                      "lineHeightPx": 27
+                    },
+                    "characters": "Product Item 1"
+                  },
+                  {
+                    "id": "ac1150ad-ecfd-4bf1-bc9d-a47afd15a842",
+                    "name": "Text 0",
+                    "type": "TEXT",
+                    "absoluteBoundingBox": {
+                      "x": 16,
+                      "y": 43,
+                      "width": 200,
+                      "height": 24
+                    },
+                    "fills": [
+                      {
+                        "type": "SOLID",
+                        "visible": true,
+                        "opacity": 1,
+                        "color": {
+                          "r": 0.09411764705882353,
+                          "g": 0.6274509803921569,
+                          "b": 0.984313725490196,
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 400,
+                      "fontSize": 16,
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "TOP",
+                      "letterSpacing": 0,
+                      "lineHeightPx": 24
+                    },
+                    "characters": "$29.99"
+                  }
+                ]
+              },
+              {
+                "id": "d1fe33b8-b8d8-4b9b-ab45-8f72c02d5ff3",
+                "name": "Item 2",
+                "type": "FRAME",
+                "absoluteBoundingBox": {
+                  "x": 392,
+                  "y": 48,
+                  "width": 320,
+                  "height": 120
+                },
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "visible": true,
+                    "opacity": 1,
+                    "color": {
+                      "r": 1,
+                      "g": 1,
+                      "b": 1,
+                      "a": 1
+                    }
+                  }
+                ],
+                "cornerRadius": 8,
+                "effects": [
+                  {
+                    "type": "DROP_SHADOW",
+                    "visible": true,
+                    "radius": 10,
+                    "color": {
+                      "r": 0,
+                      "g": 0,
+                      "b": 0,
+                      "a": 0.1
+                    },
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    }
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "83e13462-5a67-4b99-aa49-911746496818",
+                    "name": "Text 1",
+                    "type": "TEXT",
+                    "absoluteBoundingBox": {
+                      "x": 16,
+                      "y": 16,
+                      "width": 200,
+                      "height": 27
+                    },
+                    "fills": [
+                      {
+                        "type": "SOLID",
+                        "visible": true,
+                        "opacity": 1,
+                        "color": {
+                          "r": 0,
+                          "g": 0,
+                          "b": 0,
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 500,
+                      "fontSize": 18,
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "TOP",
+                      "letterSpacing": 0,
+                      "lineHeightPx": 27
+                    },
+                    "characters": "Product Item 2"
+                  },
+                  {
+                    "id": "e43bb65f-8162-4be0-b8a2-26dfe8e8c247",
+                    "name": "Text 1",
+                    "type": "TEXT",
+                    "absoluteBoundingBox": {
+                      "x": 16,
+                      "y": 43,
+                      "width": 200,
+                      "height": 24
+                    },
+                    "fills": [
+                      {
+                        "type": "SOLID",
+                        "visible": true,
+                        "opacity": 1,
+                        "color": {
+                          "r": 0.09411764705882353,
+                          "g": 0.6274509803921569,
+                          "b": 0.984313725490196,
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 400,
+                      "fontSize": 16,
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "TOP",
+                      "letterSpacing": 0,
+                      "lineHeightPx": 24
+                    },
+                    "characters": "$39.99"
+                  }
+                ]
+              },
+              {
+                "id": "43930e13-5021-4e9f-995e-3075269bdad2",
+                "name": "Item 3",
+                "type": "FRAME",
+                "absoluteBoundingBox": {
+                  "x": 736,
+                  "y": 48,
+                  "width": 320,
+                  "height": 120
+                },
+                "fills": [
+                  {
+                    "type": "SOLID",
+                    "visible": true,
+                    "opacity": 1,
+                    "color": {
+                      "r": 1,
+                      "g": 1,
+                      "b": 1,
+                      "a": 1
+                    }
+                  }
+                ],
+                "cornerRadius": 8,
+                "effects": [
+                  {
+                    "type": "DROP_SHADOW",
+                    "visible": true,
+                    "radius": 10,
+                    "color": {
+                      "r": 0,
+                      "g": 0,
+                      "b": 0,
+                      "a": 0.1
+                    },
+                    "offset": {
+                      "x": 0,
+                      "y": 4
+                    }
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "c8048374-f55f-496b-8c3c-ee4edd38f663",
+                    "name": "Text 2",
+                    "type": "TEXT",
+                    "absoluteBoundingBox": {
+                      "x": 16,
+                      "y": 16,
+                      "width": 200,
+                      "height": 27
+                    },
+                    "fills": [
+                      {
+                        "type": "SOLID",
+                        "visible": true,
+                        "opacity": 1,
+                        "color": {
+                          "r": 0,
+                          "g": 0,
+                          "b": 0,
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 500,
+                      "fontSize": 18,
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "TOP",
+                      "letterSpacing": 0,
+                      "lineHeightPx": 27
+                    },
+                    "characters": "Product Item 3"
+                  },
+                  {
+                    "id": "c23f7e9f-2e26-4260-9fa5-1bdd9f088ad1",
+                    "name": "Text 2",
+                    "type": "TEXT",
+                    "absoluteBoundingBox": {
+                      "x": 16,
+                      "y": 43,
+                      "width": 200,
+                      "height": 24
+                    },
+                    "fills": [
+                      {
+                        "type": "SOLID",
+                        "visible": true,
+                        "opacity": 1,
+                        "color": {
+                          "r": 0.09411764705882353,
+                          "g": 0.6274509803921569,
+                          "b": 0.984313725490196,
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "style": {
+                      "fontFamily": "Inter",
+                      "fontWeight": 400,
+                      "fontSize": 16,
+                      "textAlignHorizontal": "LEFT",
+                      "textAlignVertical": "TOP",
+                      "letterSpacing": 0,
+                      "lineHeightPx": 24
+                    },
+                    "characters": "$49.99"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "components": {},
+  "styles": {}
+}

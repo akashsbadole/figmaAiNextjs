@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useDesignSystemStore } from '@/store/useDesignSystemStore'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -31,8 +32,7 @@ interface HistoryItem {
 export default function HistoryPage() {
   const { isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
-  const [history, setHistory] = useState<HistoryItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const { designHistory, isLoadingHistory, historyError, fetchDesignHistory, clearDesignHistory } = useDesignSystemStore()
 
   useEffect(() => {
     if (!isLoaded) return
@@ -42,31 +42,12 @@ export default function HistoryPage() {
       return
     }
 
-    fetchHistory()
-  }, [isLoaded, isSignedIn, router])
+    fetchDesignHistory()
+  }, [isLoaded, isSignedIn, router, fetchDesignHistory])
 
-  const fetchHistory = async () => {
-    try {
-      const response = await fetch('/api/design-systems/history')
-      if (!response.ok) throw new Error('Failed to fetch history')
-      const data = await response.json()
-      setHistory(data.history || [])
-    } catch (error) {
-      console.error('Error fetching history:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const clearHistory = async () => {
+  const handleClearHistory = async () => {
     if (!confirm('Are you sure you want to clear all history?')) return
-    
-    try {
-      await fetch('/api/design-systems/history', { method: 'DELETE' })
-      setHistory([])
-    } catch (error) {
-      console.error('Error clearing history:', error)
-    }
+    await clearDesignHistory()
   }
 
   const getTypeIcon = (type: string) => {
@@ -125,8 +106,8 @@ export default function HistoryPage() {
               </div>
             </div>
           </div>
-          {history.length > 0 && (
-            <Button variant="outline" size="sm" onClick={clearHistory}>
+          {designHistory.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleClearHistory}>
               <Trash2 className="h-4 w-4 mr-2" />
               Clear History
             </Button>
@@ -135,11 +116,22 @@ export default function HistoryPage() {
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-8">
-        {loading ? (
+        {isLoadingHistory ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : history.length === 0 ? (
+        ) : historyError ? (
+          <Card className="border-destructive">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <History className="h-12 w-12 text-destructive mb-4" />
+              <h3 className="text-lg font-semibold text-destructive mb-2">Error loading history</h3>
+              <p className="text-muted-foreground text-center max-w-md mb-6">
+                {historyError}
+              </p>
+              <Button onClick={() => fetchDesignHistory()}>Try Again</Button>
+            </CardContent>
+          </Card>
+        ) : designHistory.length === 0 ? (
           <Card className="flex items-center justify-center py-20">
             <CardContent className="text-center space-y-4">
               <div className="bg-primary/10 rounded-full p-4 mx-auto w-fit">
@@ -160,7 +152,7 @@ export default function HistoryPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {history.map((item) => (
+            {designHistory.map((item) => (
               <Card key={item.id} className="hover:bg-muted/50 transition-colors">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">

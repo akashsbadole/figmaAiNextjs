@@ -1,12 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import { useEffect } from 'react'
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton, useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Palette, Zap, Download, Share2, Code, Layers, Rocket, Shield, Sparkles, MessageSquare, Server, FileCode } from 'lucide-react'
 
 export default function Home() {
+  const { isSignedIn } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isSignedIn) {
+      router.replace('/dashboard')
+    }
+  }, [isSignedIn, router])
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -14,7 +25,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Palette className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">DesignAI</span>
+           <Link href='/'> <span className="text-2xl font-bold">DesignAI</span></Link>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">Features</a>
@@ -31,10 +42,10 @@ export default function Home() {
               <Link href="/generate">
                 <Button variant="ghost">Generate</Button>
               </Link>
-              <SignInButton>
+              <SignInButton mode="modal">
                 <Button variant="ghost">Sign In</Button>
               </SignInButton>
-              <SignUpButton>
+              <SignUpButton mode="modal">
                 <Button>Get Started Free</Button>
               </SignUpButton>
             </SignedOut>

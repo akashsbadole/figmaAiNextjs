@@ -1,7 +1,14 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-// Define public routes
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/', '/generate'])
+// Define public routes - explicit patterns without wildcards
+const isPublicRoute = createRouteMatcher([
+  '/sign-in',
+  '/sign-in/:path*',
+  '/sign-up', 
+  '/sign-up/:path*',
+  '/',
+  '/generate'
+])
 
 export default clerkMiddleware((auth, req) => {
   // Protect routes that aren't public

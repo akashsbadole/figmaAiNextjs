@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Item 1",
+    "type": "container",
+    "backgroundColor": "#FFFFFF",
+    "padding": 16,
+    "cornerRadius": 8,
+    "children": [
+      {
+        "type": "text",
+        "text": "Product Item 1",
+        "fontSize": 18,
+        "fontWeight": "Medium",
+        "color": "#000000"
+      },
+      {
+        "type": "text",
+        "text": "$29.99",
+        "fontSize": 16,
+        "color": "#18A0FB"
+      }
+    ]
+  },
+  {
+    "name": "Item 2",
+    "type": "container",
+    "backgroundColor": "#FFFFFF",
+    "padding": 16,
+    "cornerRadius": 8,
+    "children": [
+      {
+        "type": "text",
+        "text": "Product Item 2",
+        "fontSize": 18,
+        "fontWeight": "Medium",
+        "color": "#000000"
+      },
+      {
+        "type": "text",
+        "text": "$39.99",
+        "fontSize": 16,
+        "color": "#18A0FB"
+      }
+    ]
+  },
+  {
+    "name": "Item 3",
+    "type": "container",
+    "backgroundColor": "#FFFFFF",
+    "padding": 16,
+    "cornerRadius": 8,
+    "children": [
+      {
+        "type": "text",
+        "text": "Product Item 3",
+        "fontSize": 18,
+        "fontWeight": "Medium",
+        "color": "#000000"
+      },
+      {
+        "type": "text",
+        "text": "$49.99",
+        "fontSize": 16,
+        "color": "#18A0FB"
+      }
+    ]
+  }
+]

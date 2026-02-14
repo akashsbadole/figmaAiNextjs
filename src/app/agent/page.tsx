@@ -11,6 +11,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
   MessageSquare,
   Send,
   Palette,
@@ -19,7 +27,13 @@ import {
   Sparkles,
   Trash2,
   Plus,
-  Clock
+  Clock,
+  Copy,
+  Check,
+  Wand2,
+  Download,
+  Eye,
+  FileCode
 } from 'lucide-react'
 
 interface Message {
@@ -46,7 +60,90 @@ export default function AgentPage() {
   const [currentConversation, setCurrentConversation] = useState<any>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loadingConversations, setLoadingConversations] = useState(true)
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewCode, setPreviewCode] = useState({ code: '', language: '', filename: '' })
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Language detection and file extensions
+  const languageMap: Record<string, { ext: string; name: string }> = {
+    html: { ext: 'html', name: 'HTML' },
+    htm: { ext: 'html', name: 'HTML' },
+    css: { ext: 'css', name: 'CSS' },
+    javascript: { ext: 'js', name: 'JavaScript' },
+    js: { ext: 'js', name: 'JavaScript' },
+    react: { ext: 'tsx', name: 'ReactJS' },
+    reactjs: { ext: 'tsx', name: 'ReactJS' },
+    nextjs: { ext: 'tsx', name: 'NextJS' },
+    next: { ext: 'tsx', name: 'NextJS' },
+    sqlite: { ext: 'sql', name: 'SQLite' },
+    sql: { ext: 'sql', name: 'SQLite' },
+  }
+
+  // Detect code blocks and extract code
+  const detectCodeBlocks = (content: string): { hasCode: boolean; code: string; language: string; filename: string } => {
+    // Check for markdown code blocks
+    const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g
+    const match = codeBlockRegex.exec(content)
+    
+    if (match) {
+      const lang = match[1].toLowerCase() || 'text'
+      const code = match[2].trim()
+      const langInfo = languageMap[lang] || { ext: 'txt', name: lang }
+      return {
+        hasCode: true,
+        code,
+        language: langInfo.name,
+        filename: `code_${Date.now()}.${langInfo.ext}`
+      }
+    }
+
+    // Check for inline code patterns
+    const inlinePatterns = [
+      { pattern: /<html[\s\S]*?<\/html>/gi, lang: 'html' },
+      { pattern: /<style[\s\S]*?<\/style>/gi, lang: 'css' },
+      { pattern: /<script[\s\S]*?<\/script>/gi, lang: 'js' },
+      { pattern: /import.*from\s+['"]react['"]/gi, lang: 'react' },
+      { pattern: /import.*from\s+['"]next['"]/gi, lang: 'nextjs' },
+      { pattern: /CREATE TABLE|SELECT \* FROM/gi, lang: 'sqlite' },
+    ]
+
+    for (const { pattern, lang } of inlinePatterns) {
+      if (pattern.test(content)) {
+        const langInfo = languageMap[lang]
+        return {
+          hasCode: true,
+          code: content,
+          language: langInfo.name,
+          filename: `code_${Date.now()}.${langInfo.ext}`
+        }
+      }
+    }
+
+    return { hasCode: false, code: '', language: '', filename: '' }
+  }
+
+  // Download code as file
+  const downloadCode = (code: string, filename: string) => {
+    const blob = new Blob([code], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  // Open preview modal
+  const openPreview = (content: string) => {
+    const detected = detectCodeBlocks(content)
+    if (detected.hasCode) {
+      setPreviewCode(detected)
+      setPreviewOpen(true)
+    }
+  }
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -171,6 +268,17 @@ export default function AgentPage() {
     }
   }, [messages])
 
+  // Copy to clipboard handler
+  const copyToClipboard = async (text: string, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedIdx(idx)
+      setTimeout(() => setCopiedIdx(null), 2000)
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
+
   if (!isLoaded || !isSignedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -207,9 +315,9 @@ export default function AgentPage() {
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-140px)]">
+        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-140px)] ">
           {/* Sidebar - Conversations */}
-          <Card className="lg:col-span-1 overflow-hidden">
+          <Card className="lg:col-span-1 overflow-hidden overflow-auto">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
@@ -231,38 +339,42 @@ export default function AgentPage() {
                 ) : (
                   <div className="space-y-2">
                     {conversations.map((conv) => (
-                      <button
+                      <div
                         key={conv.id}
                         onClick={() => loadConversation(conv.id)}
-                        className={`w-full text-left p-3 rounded-lg transition-colors ${
+                        className={`w-full text-left p-3 rounded-lg transition-colors cursor-pointer ${
                           currentConversation?.id === conv.id
                             ? 'bg-primary/10 border border-primary/20'
                             : 'hover:bg-muted/50 border border-transparent'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            {/* Horizontal scroll for title */}
                             <p className="text-sm font-medium truncate">{conv.title}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {conv.type}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {new Date(conv.updatedAt).toLocaleDateString()}
-                              </span>
+                            {/* Horizontal scroll for badges */}
+                            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pt-1">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                                  {conv.type}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                                  <Clock className="h-3 w-3 flex-shrink-0" />
+                                  {new Date(conv.updatedAt).toLocaleDateString()}
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 flex-shrink-0"
+                            className="h-6 w-6 flex-shrink-0 opacity-60 hover:opacity-100"
                             onClick={(e) => handleDeleteConversation(conv.id, e)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -271,7 +383,7 @@ export default function AgentPage() {
           </Card>
 
           {/* Chat Area */}
-          <Card className="lg:col-span-3 flex flex-col overflow-hidden">
+          <Card className="lg:col-span-3 flex flex-col overflow-hidden overflow-auto">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
@@ -317,7 +429,7 @@ export default function AgentPage() {
                     messages.map((msg, idx) => (
                       <div
                         key={idx}
-                        className={`flex gap-3 ${
+                        className={`flex gap-3 animate-in slide-in-from-bottom-2 fade-in duration-300 ${
                           msg.role === 'user' ? 'justify-end' : 'justify-start'
                         }`}
                       >
@@ -329,13 +441,62 @@ export default function AgentPage() {
                           </Avatar>
                         )}
                         <div
-                          className={`max-w-[80%] rounded-lg p-4 ${
+                          className={`max-w-[80%] rounded-lg p-4 overflow-hidden ${
                             msg.role === 'user'
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted'
                           }`}
                         >
-                          <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                          {/* Message header with copy, preview, and download buttons for assistant */}
+                          {msg.role === 'assistant' && (
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium opacity-70">AI Assistant</span>
+                              <div className="flex items-center gap-1">
+                                {detectCodeBlocks(msg.content).hasCode && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 opacity-60 hover:opacity-100"
+                                      onClick={() => openPreview(msg.content)}
+                                      title="Preview Code"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 opacity-60 hover:opacity-100"
+                                      onClick={() => {
+                                        const detected = detectCodeBlocks(msg.content)
+                                        downloadCode(detected.code, detected.filename)
+                                      }}
+                                      title="Download Code"
+                                    >
+                                      <Download className="h-3 w-3" />
+                                    </Button>
+                                  </>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 opacity-60 hover:opacity-100"
+                                  onClick={() => copyToClipboard(msg.content, idx)}
+                                  title="Copy"
+                                >
+                                  {copiedIdx === idx ? (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          {/* Horizontal scroll wrapper for message content */}
+                          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                            <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
+                          </div>
                           <p className="text-xs mt-2 opacity-60">
                             {new Date(msg.timestamp).toLocaleTimeString()}
                           </p>
@@ -401,6 +562,44 @@ export default function AgentPage() {
           </Card>
         </div>
       </main>
+
+      {/* Code Preview Modal */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCode className="h-5 w-5" />
+              Code Preview - {previewCode.language}
+            </DialogTitle>
+            <DialogDescription>
+              Filename: {previewCode.filename}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+              <code className="text-sm font-mono">{previewCode.code}</code>
+            </pre>
+          </ScrollArea>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(previewCode.code)
+                alert('Copied to clipboard!')
+              }}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy
+            </Button>
+            <Button
+              onClick={() => downloadCode(previewCode.code, previewCode.filename)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

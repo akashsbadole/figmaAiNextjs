@@ -13,54 +13,407 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============ USER & AUTH ============
+
 model User {
-  id             String                 @id @default(cuid())
-  clerkId        String                 @unique // Clerk user ID
-  email          String                 @unique
-  name           String?
-  imageUrl       String?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  designSystems  DesignSystem[]
-  conversations  Conversation[]
-  figmaDesigns   FigmaDesign[]
-  systemDesigns  SystemDesign[]
+  id                         String                 @id @default(cuid())
+  clerkId                    String                 @unique
+  email                      String                 @unique
+  name                       String?
+  imageUrl                   String?
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
+
+  // Relations
+  designSystems              DesignSystem[]
+  conversations              Conversation[]
+  figmaDesigns              FigmaDesign[]
+  systemDesigns              SystemDesign[]
+  designVersions             DesignSystemVersion[]
+  marketplaceComponents      MarketplaceComponent[]
+  reviews                    ComponentReview[]
+  favorites                  ComponentFavorite[]
+  collaborations             CollaborationSessionParticipant[]
+  projects                   Project[]
+  githubConnection           GitHubConnection?
+  githubRepos                GitHubRepo[]
 }
 
+// ============ DESIGN SYSTEM ============
+
 model DesignSystem {
-  id             String    @id @default(cuid())
-  name           String
-  description    String?
-  prompt         String    // Original AI prompt
-  userId         String
-  user           User      @relation(fields: [userId], references: [id])
+  id                String                 @id @default(cuid())
+  name              String
+  description       String?
+  prompt            String
+  userId            String
+  user              User                   @relation(fields: [userId], references: [id])
 
   // Design Tokens (stored as JSON)
-  colors         String    // JSON: { primary, secondary, accent, neutral, success, warning, error, etc. }
-  typography      String    // JSON: { fontFamily, fontSize, fontWeight, lineHeight }
-  spacing         String    // JSON: { scale, values }
-  borderRadius    String    // JSON: { sm, md, lg, xl, full }
-  shadows         String    // JSON: { sm, md, lg, xl }
-
-  // Component configurations
-  components      String    // JSON: { button, card, input, modal, etc. }
+  colors            String                 // JSON: { primary, secondary, accent, neutral, etc. }
+  typography        String                 // JSON: { fontFamily, fontSize, fontWeight }
+  spacing           String                 // JSON: { scale, values }
+  borderRadius      String                 // JSON: { sm, md, lg, xl, full }
+  shadows           String                 // JSON: { sm, md, lg, xl }
+  components        String                 // JSON: { button, card, input, modal, etc. }
 
   // Metadata
-  category        String?   // e.g., "fintech", "healthtech", "ecommerce"
-  industry        String?
-  version         Int       @default(1)
+  category          String?
+  industry          String?
+  version           Int                    @default(1)
 
   // Sharing
-  isPublic        Boolean   @default(false)
-  shareSlug       String?   @unique
+  isPublic          Boolean                @default(false)
+  shareSlug         String?                @unique
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  // Sync status (Figma integration)
+  figmaFileKey      String?
+  lastSyncedAt      DateTime?
+  syncStatus        String                 @default("synced") // synced, syncing, error
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  // Relations
+  versions          DesignSystemVersion[]
+  branches          Branch[]
+  sessions          CollaborationSession[]
+  abTests           ABTest[]
 
   @@index([userId])
   @@index([shareSlug])
   @@index([isPublic])
+  @@index([figmaFileKey])
 }
+
+// ============ VERSION CONTROL ============
+
+model DesignSystemVersion {
+  id                String                 @id @default(cuid())
+  designSystemId    String
+  designSystem      DesignSystem           @relation(fields: [designSystemId], references: [id])
+
+  // Git-like references
+  commitHash        String                 @unique
+  parentHashes      String                 // JSON array of parent commit hashes
+  branchId          String?
+  branch            Branch?                @relation(fields: [branchId], references: [id])
+
+  // Snapshot data
+  colors            String
+  typography        String
+  spacing           String
+  borderRadius      String
+  shadows           String
+  components        String
+
+  // Metadata
+  message           String
+  authorId          String
+  author            User                   @relation(fields: [authorId], references: [id])
+  tags              String                 // JSON array of tag names
+
+  createdAt         DateTime               @default(now())
+
+  changes           Change[]
+
+  @@index([designSystemId])
+  @@index([commitHash])
+  @@index([branchId])
+}
+
+model Branch {
+  id                String                 @id @default(cuid())
+  name              String
+  designSystemId    String
+  designSystem      DesignSystem           @relation(fields: [designSystemId], references: [id])
+
+  // Branch metadata
+  headCommitHash    String
+  baseCommitHash   String?
+  status            String                 @default("active") // active, merged, archived
+
+  // Protection rules
+  protectionRules   String?                 // JSON configuration
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  versions          DesignSystemVersion[]
+  pullRequests      PullRequest[]
+
+  @@index([designSystemId])
+  @@index([name])
+}
+
+model PullRequest {
+  id                String                 @id @default(cuid())
+  branchId          String
+  branch            Branch                 @relation(fields: [branchId], references: [id])
+
+  title             String
+  description       String?
+  status            String                 @default("open") // open, merged, closed
+
+  sourceBranchId    String
+  targetBranchId    String
+
+  // Review data
+  reviewers         String                 // JSON array of reviewer IDs
+  approvals         String                 // JSON array of approval records
+  comments          String                 // JSON array of comments
+
+  // Merge result
+  mergeCommitHash   String?
+  conflicts         String?                // JSON array of conflict files
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([branchId])
+  @@index([status])
+}
+
+model Change {
+  id                String                 @id @default(cuid())
+  versionId         String
+  version           DesignSystemVersion    @relation(fields: [versionId], references: [id])
+
+  entityType        String                 // color, typography, component, etc.
+  entityId          String
+  changeType        String                 // added, modified, deleted
+  oldValue          String?
+  newValue          String?
+
+  // AI-generated change analysis
+  aiAnalysis        String?
+  impactScore       Int?                   // 1-10 impact score
+
+  createdAt         DateTime               @default(now())
+
+  @@index([versionId])
+  @@index([entityType])
+}
+
+// ============ COLLABORATION ============
+
+model CollaborationSession {
+  id                String                 @id @default(cuid())
+  designSystemId    String
+  designSystem      DesignSystem           @relation(fields: [designSystemId], references: [id])
+
+  name              String
+  isActive          Boolean                @default(true)
+  maxParticipants   Int                    @default(10)
+
+  createdAt         DateTime               @default(now())
+  endedAt           DateTime?
+
+  participants      CollaborationSessionParticipant[]
+  operations        CollaborationOperation[]
+
+  @@index([designSystemId])
+  @@index([isActive])
+}
+
+model CollaborationSessionParticipant {
+  id                String                 @id @default(cuid())
+  sessionId         String
+  session           CollaborationSession   @relation(fields: [sessionId], references: [id])
+
+  userId            String
+  user              User                   @relation(fields: [userId], references: [id])
+
+  cursorPosition   String?                 // JSON
+  presenceState    String?                 // JSON
+  color            String
+  isActive          Boolean                @default(true)
+
+  joinedAt          DateTime               @default(now())
+  lastActiveAt      DateTime               @updatedAt
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model CollaborationOperation {
+  id                String                 @id @default(cuid())
+  sessionId         String
+  session           CollaborationSession   @relation(fields: [sessionId], references: [id])
+
+  userId            String
+  type              String                 // insert, delete, update, move
+  payload           String                 // JSON
+  vectorClock       String                 // JSON
+
+  timestamp         BigInt
+
+  @@index([sessionId])
+  @@index([timestamp])
+}
+
+// ============ MARKETPLACE ============
+
+model MarketplaceComponent {
+  id                String                 @id @default(cuid())
+  name              String
+  description       String
+  category          String
+
+  publisherId       String
+  publisher         User                   @relation(fields: [publisherId], references: [id])
+
+  // Component data
+  designData        String                 // JSON component specification
+  sourceCode        String                 // TypeScript/React source code
+  previewImage     String                 // URL to preview image
+
+  // Dependencies
+  framework         String                 // react, vue, svelte
+  dependencies      String                 // JSON object of npm dependencies
+  peerDependencies  String                 // JSON object of peer dependencies
+
+  // Versioning
+  currentVersion    String
+  versionHistory    String                 // JSON array of version history
+
+  // Metrics
+  downloads         Int                    @default(0)
+  rating            Float?
+  ratingCount       Int                    @default(0)
+
+  // Status
+  status            String                 @default("draft") // draft, published, archived
+  isFeatured        Boolean                @default(false)
+
+  // Tags
+  tags              String                 // JSON array of tags
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  reviews           ComponentReview[]
+  favorites         ComponentFavorite[]
+  componentDependencies ComponentDependency[] @relation("ComponentDependencies")
+
+  @@index([category])
+  @@index([publisherId])
+  @@index([status])
+  @@index([rating])
+}
+
+model ComponentReview {
+  id                String                 @id @default(cuid())
+  componentId       String
+  component         MarketplaceComponent   @relation(fields: [componentId], references: [id])
+
+  userId            String
+  user              User                   @relation(fields: [userId], references: [id])
+
+  rating            Int                    // 1-5 stars
+  title             String?
+  content           String
+
+  // Review flags
+  isHelpful         Int                    @default(0)
+  isVerified        Boolean                @default(false) // Verified purchase/use
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([componentId])
+  @@index([userId])
+}
+
+model ComponentFavorite {
+  id                String                 @id @default(cuid())
+  componentId       String
+  component         MarketplaceComponent   @relation(fields: [componentId], references: [id])
+
+  userId            String
+  user              User                   @relation(fields: [userId], references: [id])
+
+  createdAt         DateTime               @default(now())
+
+  @@unique([componentId, userId])
+}
+
+model ComponentDependency {
+  id                String                 @id @default(cuid())
+  componentId       String
+  component         MarketplaceComponent   @relation("ComponentDependencies", fields: [componentId], references: [id])
+
+  dependsOnId       String
+  versionRange      String                 // e.g., "^1.0.0" or ">=2.0.0"
+
+  createdAt         DateTime               @default(now())
+
+  @@unique([componentId, dependsOnId])
+}
+
+// ============ A/B TESTING ============
+
+model ABTest {
+  id                String                 @id @default(cuid())
+  name              String
+  description       String?
+
+  designSystemId    String
+  designSystem      DesignSystem           @relation(fields: [designSystemId], references: [id])
+
+  controlVariantId   String
+  variantIds         String                 // JSON array
+  trafficAllocation  String                 // JSON object
+
+  // Targeting
+  targetAudience     String                 // JSON object
+
+  // Scheduling
+  startDate         DateTime
+  endDate           DateTime?
+
+  // Status
+  status            String                 @default("draft") // draft, running, paused, completed
+
+  // Metrics
+  primaryMetric      String
+  secondaryMetrics  String                 // JSON array
+
+  // Results
+  winnerId          String?
+  confidenceLevel   Float?
+  statisticalSignificance Float?
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  results           ABTestResult[]
+
+  @@index([designSystemId])
+  @@index([status])
+}
+
+model ABTestResult {
+  id                String                 @id @default(cuid())
+  testId            String
+  test              ABTest                 @relation(fields: [testId], references: [id])
+
+  variantId          String
+  sampleSize        Int
+  conversions       Int
+  conversionRate    Float
+
+  confidenceIntervalLow    Float
+  confidenceIntervalHigh   Float
+
+  improvement       Float?
+
+  analyzedAt        DateTime               @default(now())
+
+  @@index([testId])
+}
+
+// ============ EXISTING MODELS ============
 
 model Conversation {
   id          String   @id @default(cuid())
@@ -111,16 +464,181 @@ model SystemDesign {
 }
 
 model DesignHistory {
-  id             String   @id @default(cuid())
-  userId         String
-  designSystemId String?  // Reference to the generated design system
-  name           String
-  description    String?
-  prompt         String
-  type           String   // "design-system", "figma", "system-design"
-  createdAt      DateTime @default(now())
+  id               String   @id @default(cuid())
+  userId           String
+  designSystemId   String?  // Reference to the generated design system
+  name             String
+  description      String?
+  prompt           String
+  type             String   // "design-system", "figma", "system-design"
+  createdAt        DateTime @default(now())
 
   @@index([userId])
   @@index([createdAt])
   @@index([type])
+}
+
+// ============ PROJECT MANAGEMENT ============
+
+model Project {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  
+  // WebContainer state
+  files             String    // JSON: virtual file system
+  dependencies      String    // JSON: package.json dependencies
+  
+  // Runtime state
+  status            String    @default("stopped") // stopped, running, building
+  previewUrl        String?
+  webContainerId   String?
+  
+  // Snapshots
+  snapshots         ProjectSnapshot[]
+  
+  // Relations
+  githubRepo        GitHubRepo?
+  agentSessions     AgentSession[]
+  deployments       Deployment[]
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([userId])
+}
+
+model ProjectSnapshot {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  files       String   // JSON: complete file tree
+  commitHash  String   @unique
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([projectId])
+}
+
+// ============ AI AGENT STATE ============
+
+model AgentSession {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Agent state
+  currentAgent    String   // planner, coder, debugger, etc.
+  taskList        String   // JSON: task breakdown
+  completedTasks  String   // JSON: completed task IDs
+  
+  // Context
+  contextWindow   String   // JSON: current context
+  memory          String   // JSON: long-term memory
+  
+  // Status
+  status          String   @default("idle") // idle, running, paused, completed
+  errorCount      Int      @default(0)
+  
+  // Relations
+  executions      AgentExecution[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([projectId])
+}
+
+model AgentExecution {
+  id              String   @id @default(cuid())
+  sessionId       String
+  session         AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // Execution details
+  agentType       String
+  task            String
+  input           String   // JSON: task input
+  output          String   // JSON: task output
+  
+  // Timing
+  startedAt       DateTime
+  completedAt    DateTime?
+  durationMs     Int?
+  
+  // Result
+  success         Boolean
+  error          String?
+  
+  @@index([sessionId])
+}
+
+// ============ GITHUB INTEGRATION ============
+
+model GitHubConnection {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  accessToken     String   // Encrypted
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  
+  githubId        String?
+  githubUsername  String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model GitHubRepo {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  owner           String
+  name            String
+  fullName        String   @unique
+  
+  defaultBranch   String   @default("main")
+  lastSyncedAt    DateTime?
+  
+  // Project linkage
+  projectId       String   @unique
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+// ============ DEPLOYMENT ============
+
+model Deployment {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Deployment info
+  provider        String   // vercel, netlify, etc.
+  url             String?
+  deployId        String?
+  
+  // Build info
+  buildStatus     String   @default("pending")
+  buildOutput     String?
+  startedAt       DateTime
+  completedAt     DateTime?
+  
+  // Errors
+  error           String?
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([projectId])
 }

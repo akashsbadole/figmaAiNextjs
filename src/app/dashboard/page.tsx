@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
-import { useAuth } from '@clerk/nextjs'
+import { useAuth, UserButton } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+import { useDesignSystemStore } from '@/store/useDesignSystemStore'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -37,9 +38,7 @@ interface DesignSystem {
 export default function DashboardPage() {
   const { isLoaded, isSignedIn, userId } = useAuth()
   const router = useRouter()
-  const [designSystems, setDesignSystems] = useState<DesignSystem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [total, setTotal] = useState(0)
+  const { designSystems, totalCount, isLoading, error, fetchDesignSystems, deleteDesignSystem } = useDesignSystemStore()
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -47,38 +46,13 @@ export default function DashboardPage() {
       return
     }
     if (isSignedIn) {
-      fetchDesignSystems()
+      fetchDesignSystems({ limit: 50 })
     }
-  }, [isLoaded, isSignedIn, router])
-
-  const fetchDesignSystems = async () => {
-    try {
-      const response = await fetch('/api/design-systems?limit=50')
-      if (!response.ok) throw new Error('Failed to fetch design systems')
-      const data = await response.json()
-      setDesignSystems(data.designSystems)
-      setTotal(data.total)
-    } catch (error) {
-      console.error('Error fetching design systems:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [isLoaded, isSignedIn, router, fetchDesignSystems])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this design system?')) return
-
-    try {
-      const response = await fetch(`/api/design-systems/${id}`, {
-        method: 'DELETE'
-      })
-      if (!response.ok) throw new Error('Failed to delete design system')
-      setDesignSystems(systems => systems.filter(s => s.id !== id))
-      setTotal(prev => prev - 1)
-    } catch (error) {
-      console.error('Error deleting design system:', error)
-      alert('Failed to delete design system')
-    }
+    await deleteDesignSystem(id)
   }
 
   if (!isLoaded) {
@@ -96,7 +70,7 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Palette className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">DesignAI</span>
+              <span className="text-2xl font-bold">DesignAI</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/generate">
@@ -105,6 +79,7 @@ export default function DashboardPage() {
                 New Design System
               </Button>
             </Link>
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>
@@ -117,7 +92,7 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-3xl font-bold">Dashboard</h1>
               <p className="text-muted-foreground mt-2">
-                {total} design system{total !== 1 ? 's' : ''} created
+                {totalCount} design system{totalCount !== 1 ? 's' : ''} created
               </p>
             </div>
             <Link href="/dashboard/history">
@@ -180,13 +155,26 @@ export default function DashboardPage() {
           </div>
 
           {/* Design Systems Grid */}
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center space-y-4">
                 <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
                 <p className="text-lg text-muted-foreground">Loading design systems...</p>
               </div>
             </div>
+          ) : error ? (
+            <Card className="border-destructive">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Palette className="h-16 w-16 text-destructive mb-4" />
+                <h3 className="text-xl font-semibold text-destructive mb-2">Error loading design systems</h3>
+                <p className="text-muted-foreground text-center max-w-md mb-6">
+                  {error}
+                </p>
+                <Button onClick={() => fetchDesignSystems({ limit: 50 })}>
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
           ) : designSystems.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-16">
