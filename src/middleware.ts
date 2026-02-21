@@ -1,20 +1,36 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
-// Define public routes - explicit patterns without wildcards
+// Define public routes with proper wildcard patterns
 const isPublicRoute = createRouteMatcher([
-  '/sign-in',
-  '/sign-in/:path*',
-  '/sign-up', 
-  '/sign-up/:path*',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
   '/',
-  '/generate'
+  '/generate(.*)',
+  '/api/health(.*)',
+  '/api/test-db(.*)',
+  '/figma(.*)',
+  '/_next(.*)',
+  '/favicon.ico(.*)',
+  '/logo.png(.*)',
+  '/robots.txt(.*)'
 ])
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   // Protect routes that aren't public
   if (!isPublicRoute(req)) {
-    auth.protect()
+    // auth.protect() will redirect to sign-in if not authenticated
+    await auth.protect()
   }
+
+  // Add Cross-Origin headers for WebContainer support
+  const response = NextResponse.next()
+
+  // These headers are required for SharedArrayBuffer (WebContainer)
+  response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp')
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin')
+
+  return response
 })
 
 export const config = {

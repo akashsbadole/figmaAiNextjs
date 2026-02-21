@@ -1,0 +1,506 @@
+[
+    {
+        "name": "Design System Header",
+        "type": "container",
+        "backgroundColor": "#F8F9FA",
+        "padding": 32,
+        "cornerRadius": 16,
+        "children": [
+            {
+                "type": "text",
+                "text": "Modern Design System",
+                "fontSize": 32,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "A comprehensive design system for modern web applications",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#666666"
+            },
+            {
+                "type": "text",
+                "text": "Version: 1.0.0",
+                "fontSize": 14,
+                "fontWeight": "Regular",
+                "color": "#999999"
+            }
+        ]
+    },
+    {
+        "name": "Color Palette Section",
+        "type": "container",
+        "backgroundColor": "#E9ECEF",
+        "padding": 20,
+        "cornerRadius": 12,
+        "children": [
+            {
+                "type": "text",
+                "text": "Color Palette",
+                "fontSize": 28,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "name": "Primary Palette",
+        "type": "container",
+        "backgroundColor": "#FFFFFF",
+        "padding": 24,
+        "cornerRadius": 16,
+        "children": [
+            {
+                "type": "text",
+                "text": "Primary Colors",
+                "fontSize": 24,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "50: #EFF6FF",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#EFF6FF"
+            },
+            {
+                "type": "text",
+                "text": "100: #DBEAFE",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#DBEAFE"
+            },
+            {
+                "type": "text",
+                "text": "200: #BFDBFE",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#BFDBFE"
+            },
+            {
+                "type": "text",
+                "text": "300: #93C5FD",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#93C5FD"
+            },
+            {
+                "type": "text",
+                "text": "400: #60A5FA",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#60A5FA"
+            },
+            {
+                "type": "text",
+                "text": "500: #3B82F6",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#3B82F6"
+            },
+            {
+                "type": "text",
+                "text": "600: #2563EB",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#2563EB"
+            },
+            {
+                "type": "text",
+                "text": "700: #1D4ED8",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#1D4ED8"
+            },
+            {
+                "type": "text",
+                "text": "800: #1E40AF",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#1E40AF"
+            },
+            {
+                "type": "text",
+                "text": "900: #1E3A8A",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#1E3A8A"
+            }
+        ]
+    },
+    {
+        "name": "Neutral Palette",
+        "type": "container",
+        "backgroundColor": "#FFFFFF",
+        "padding": 24,
+        "cornerRadius": 16,
+        "children": [
+            {
+                "type": "text",
+                "text": "Neutral Colors",
+                "fontSize": 24,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "50: #F9FAFB",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#F9FAFB"
+            },
+            {
+                "type": "text",
+                "text": "100: #F3F4F6",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#F3F4F6"
+            },
+            {
+                "type": "text",
+                "text": "500: #6B7280",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#6B7280"
+            },
+            {
+                "type": "text",
+                "text": "900: #111827",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#111827"
+            }
+        ]
+    },
+    {
+        "name": "Typography Section",
+        "type": "container",
+        "backgroundColor": "#E9ECEF",
+        "padding": 20,
+        "cornerRadius": 12,
+        "children": [
+            {
+                "type": "text",
+                "text": "Typography",
+                "fontSize": 28,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "name": "Font Families",
+        "type": "container",
+        "backgroundColor": "#FFFFFF",
+        "padding": 24,
+        "cornerRadius": 16,
+        "children": [
+            {
+                "type": "text",
+                "text": "Font Families",
+                "fontSize": 24,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "Sans: Inter, system-ui, sans-serif",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "Mono: Fira Code, monospace",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            }
+        ]
+    },
+    {
+        "name": "Font Size Scale",
+        "type": "container",
+        "backgroundColor": "#FFFFFF",
+        "padding": 24,
+        "cornerRadius": 16,
+        "children": [
+            {
+                "type": "text",
+                "text": "Font Sizes",
+                "fontSize": 24,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "xs: 12px",
+                "fontSize": 12,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "sm: 14px",
+                "fontSize": 14,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "base: 16px",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "lg: 18px",
+                "fontSize": 18,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "xl: 20px",
+                "fontSize": 20,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "2xl: 24px",
+                "fontSize": 24,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "3xl: 30px",
+                "fontSize": 30,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            }
+        ]
+    },
+    {
+        "name": "Font Weights",
+        "type": "container",
+        "backgroundColor": "#FFFFFF",
+        "padding": 24,
+        "cornerRadius": 16,
+        "children": [
+            {
+                "type": "text",
+                "text": "Font Weights",
+                "fontSize": 24,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "light: 300",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "regular: 400",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "medium: 500",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "semibold: 600",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "bold: 700",
+                "fontSize": 16,
+                "fontWeight": "Medium",
+                "color": "#333333"
+            }
+        ]
+    },
+    {
+        "name": "Components Section",
+        "type": "container",
+        "backgroundColor": "#E9ECEF",
+        "padding": 20,
+        "cornerRadius": 12,
+        "children": [
+            {
+                "type": "text",
+                "text": "Components",
+                "fontSize": 28,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "name": "Button Component",
+        "type": "container",
+        "backgroundColor": "#3B82F6",
+        "padding": 16,
+        "cornerRadius": 8,
+        "children": [
+            {
+                "type": "text",
+                "text": "Primary Button",
+                "fontSize": 16,
+                "fontWeight": "SemiBold",
+                "color": "#FFFFFF"
+            },
+            {
+                "type": "text",
+                "text": "Click me",
+                "fontSize": 14,
+                "fontWeight": "Medium",
+                "color": "#FFFFFF"
+            }
+        ]
+    },
+    {
+        "name": "Card Component",
+        "type": "container",
+        "backgroundColor": "#FFFFFF",
+        "padding": 20,
+        "cornerRadius": 12,
+        "children": [
+            {
+                "type": "text",
+                "text": "Card Title",
+                "fontSize": 20,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "Card description text goes here",
+                "fontSize": 14,
+                "fontWeight": "Regular",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "Learn More",
+                "fontSize": 14,
+                "fontWeight": "Medium",
+                "color": "#3B82F6"
+            }
+        ]
+    },
+    {
+        "name": "Input Component",
+        "type": "container",
+        "backgroundColor": "#F9FAFB",
+        "padding": 12,
+        "cornerRadius": 6,
+        "children": [
+            {
+                "type": "text",
+                "text": "Label",
+                "fontSize": 14,
+                "fontWeight": "Medium",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "Enter text here...",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#999999"
+            }
+        ]
+    },
+    {
+        "name": "Spacing Section",
+        "type": "container",
+        "backgroundColor": "#E9ECEF",
+        "padding": 20,
+        "cornerRadius": 12,
+        "children": [
+            {
+                "type": "text",
+                "text": "Spacing",
+                "fontSize": 28,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            }
+        ]
+    },
+    {
+        "name": "Spacing System",
+        "type": "container",
+        "backgroundColor": "#FFFFFF",
+        "padding": 24,
+        "cornerRadius": 16,
+        "children": [
+            {
+                "type": "text",
+                "text": "Spacing Scale",
+                "fontSize": 24,
+                "fontWeight": "Bold",
+                "color": "#000000"
+            },
+            {
+                "type": "text",
+                "text": "1: 4px",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "2: 8px",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "3: 12px",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "4: 16px",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "6: 24px",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            },
+            {
+                "type": "text",
+                "text": "8: 32px",
+                "fontSize": 16,
+                "fontWeight": "Regular",
+                "color": "#333333"
+            }
+        ]
+    }
+]

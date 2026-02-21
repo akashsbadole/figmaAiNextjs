@@ -73,12 +73,6 @@ export default function DashboardPage() {
               <span className="text-2xl font-bold">DesignAI</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/generate">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                New Design System
-              </Button>
-            </Link>
             <UserButton afterSignOutUrl="/" />
           </div>
         </div>
@@ -95,12 +89,7 @@ export default function DashboardPage() {
                 {totalCount} design system{totalCount !== 1 ? 's' : ''} created
               </p>
             </div>
-            <Link href="/dashboard/history">
-              <Button variant="outline">
-                <History className="h-4 w-4 mr-2" />
-                View History
-              </Button>
-            </Link>
+            
             <Link href="/generate">
               <Button size="lg">
                 <Sparkles className="h-4 w-4 mr-2" />
@@ -131,7 +120,7 @@ export default function DashboardPage() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                     <FileCode className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle>Figma Generator</CardTitle>
+                  <CardTitle>Design Generator</CardTitle>
                   <CardDescription>
                     Generate Figma-compatible design structures
                   </CardDescription>
@@ -145,7 +134,7 @@ export default function DashboardPage() {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                     <Server className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle>System Design</CardTitle>
+                  <CardTitle>Design System</CardTitle>
                   <CardDescription>
                     Create comprehensive system architectures
                   </CardDescription>

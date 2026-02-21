@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Design Generator Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 368px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.5);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #fff;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn-ai:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(240, 147, 251, 0.5);
+        }
+
+        .btn-sync {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: #fff;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-sync:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 172, 254, 0.5);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .divider::before {
+            left: 0;
+        }
+
+        .divider::after {
+            right: 0;
+        }
+
+        .divider span {
+            background: transparent;
+            padding: 0 12px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .status.success {
+            background: rgba(72, 187, 120, 0.2);
+            border: 1px solid rgba(72, 187, 120, 0.4);
+            color: #fff;
+            display: block;
+        }
+
+        .status.error {
+            background: rgba(245, 101, 101, 0.2);
+            border: 1px solid rgba(245, 101, 101, 0.4);
+            color: #fff;
+            display: block;
+        }
+
+        .status.loading {
+            background: rgba(66, 153, 225, 0.2);
+            border: 1px solid rgba(66, 153, 225, 0.4);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .preview.show {
+            display: block;
+        }
+
+        .preview-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .preview-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            font-size: 11px;
+        }
+
+        .preview-stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .preview-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .preview-stat-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .ai-icon {
+            display: inline-block;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Design System Pro</h1>
+            <p>Sync, Generate & Export with AI</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="import">Import</button>
+            <button class="tab" data-tab="sync">Sync</button>
+            <button class="tab" data-tab="ai">AI Generate</button>
+            <button class="tab" data-tab="export">Export</button>
+        </div>
+
+        <!-- Import Tab -->
+        <div class="tab-content active" id="import-tab">
+            <div class="form-group">
+                <label for="apiUrl">Your App URL</label>
+                <input type="text" id="apiUrl" placeholder="http://localhost:3000" value="http://localhost:3000">
+            </div>
+
+            <div class="form-group">
+                <label for="designId">Design System ID</label>
+                <input type="text" id="designId" placeholder="Enter design system ID">
+            </div>
+
+            <button class="btn btn-primary" id="importBtn">
+                <span class="btn-text">Import Design System</span>
+            </button>
+
+            <button class="btn btn-secondary" id="sampleBtn">
+                Load Sample Design
+            </button>
+        </div>
+
+        <!-- Sync Tab -->
+        <div class="tab-content" id="sync-tab">
+            <div class="form-group">
+                <label for="syncApiUrl">Your App URL</label>
+                <input type="text" id="syncApiUrl" placeholder="http://localhost:3000" value="http://localhost:3000">
+            </div>
+
+            <div class="form-group">
+                <label for="syncDesignId">Design System ID <span class="feature-badge">NEW</span></label>
+                <input type="text" id="syncDesignId" placeholder="Enter design system ID">
+            </div>
+
+            <div class="form-group">
+                <label for="authToken">Authentication Token (Optional)</label>
+                <input type="password" id="authToken" placeholder="Your auth token">
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="autoSync" />
+                <label for="autoSync">Enable auto-sync</label>
+            </div>
+
+            <button class="btn btn-sync" id="syncBtn">
+                <span class="btn-text">🔄 Sync to Figma</span>
+            </button>
+
+            <div
+                style="margin-top: 16px; padding: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 11px;">
+                <strong>What is Sync?</strong><br>
+                Sync creates a complete Figma file structure with pages for tokens, components, and examples. Your
+                design system will be linked to this Figma file.
+            </div>
+        </div>
+
+        <!-- AI Generate Tab -->
+        <div class="tab-content" id="ai-tab">
+            <div class="form-group">
+                <label for="aiPrompt">
+                    <span class="ai-icon">✨</span> Describe what you want to create
+                </label>
+                <textarea id="aiPrompt"
+                    placeholder="e.g., Create a modern login form with email, password fields, and a primary button. Use blue as primary color with rounded corners."></textarea>
+            </div>
+
+            <div class="options-grid">
+                <div class="form-group">
+                    <label for="aiType">Type</label>
+                    <select id="aiType">
+                        <option value="component">Component</option>
+                        <option value="screen">Screen</option>
+                        <option value="dashboard">Dashboard</option>
+                        <option value="landing-page">Landing Page</option>
+                        <option value="mobile-app">Mobile App</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="aiStyle">Style</label>
+                    <select id="aiStyle">
+                        <option value="modern">Modern</option>
+                        <option value="minimal">Minimal</option>
+                        <option value="playful">Playful</option>
+                        <option value="professional">Professional</option>
+                        <option value="elegant">Elegant</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="aiPlatform">Platform</label>
+                <select id="aiPlatform">
+                    <option value="web">Web</option>
+                    <option value="mobile">Mobile (iOS/Android)</option>
+                    <option value="desktop">Desktop</option>
+                    <option value="tablet">Tablet</option>
+                </select>
+            </div>
+
+            <button class="btn btn-ai" id="aiGenerateBtn">
+                <span class="ai-icon">✨</span>
+                <span class="btn-text">Generate with AI</span>
+            </button>
+
+            <div
+                style="margin-top: 16px; padding: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 11px;">
+                <strong>AI Generation</strong><br>
+                Describe your design in natural language and AI will create Figma elements automatically.
+            </div>
+        </div>
+
+        <!-- Export Tab -->
+        <div class="tab-content" id="export-tab">
+            <div
+                style="margin-bottom: 16px; padding: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 12px;">
+                <strong>Export Selection</strong><br>
+                Select elements in Figma and export them as JSON format.
+            </div>
+
+            <button class="btn btn-primary" id="exportBtn">
+                <span class="btn-text">📤 Export Selection to JSON</span>
+            </button>
+
+            <div class="divider">
+                <span>Export Options</span>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="includeStyles" checked />
+                <label for="includeStyles">Include styles</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="includeAssets" checked />
+                <label for="includeAssets">Include assets</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="prettifyJson" checked />
+                <label for="prettifyJson">Prettify JSON</label>
+            </div>
+        </div>
+
+        <!-- Status & Preview -->
+        <div class="status" id="status"></div>
+        <div class="preview" id="preview"></div>
+    </div>
+
+    <script>
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            });
+        });
+
+        // UI Elements
+        const importBtn = document.getElementById('importBtn');
+        const sampleBtn = document.getElementById('sampleBtn');
+        const syncBtn = document.getElementById('syncBtn');
+        const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const statusEl = document.getElementById('status');
+        const previewEl = document.getElementById('preview');
+
+        // Import button
+        importBtn.addEventListener('click', () => {
+            const apiUrl = document.getElementById('apiUrl').value || 'http://localhost:3000';
+            const designId = document.getElementById('designId').value;
+
+            if (!designId) {
+                showStatus('error', 'Please enter a Design System ID');
+                return;
+            }
+
+            importBtn.disabled = true;
+            importBtn.querySelector('.btn-text').textContent = 'Importing...';
+
+            parent.postMessage({ pluginMessage: { type: 'import-design', apiUrl, designId } }, '*');
+        });
+
+        // Sample button
+        sampleBtn.addEventListener('click', () => {
+            sampleBtn.disabled = true;
+            parent.postMessage({ pluginMessage: { type: 'load-sample' } }, '*');
+        });
+
+        // Sync button
+        syncBtn.addEventListener('click', () => {
+            const syncApiUrl = document.getElementById('syncApiUrl').value || 'http://localhost:3000';
+            const designSystemId = document.getElementById('syncDesignId').value;
+            const authToken = document.getElementById('authToken').value;
+            const autoSync = document.getElementById('autoSync').checked;
+
+            if (!designSystemId) {
+                showStatus('error', 'Please enter a Design System ID');
+                return;
+            }
+
+            // Set API URL first
+            parent.postMessage({ pluginMessage: { type: 'set-api-url', url: syncApiUrl } }, '*');
+
+            if (authToken) {
+                parent.postMessage({ pluginMessage: { type: 'set-auth', token: authToken } }, '*');
+            }
+
+            parent.postMessage({ pluginMessage: { type: 'enable-sync', enabled: autoSync } }, '*');
+
+            syncBtn.disabled = true;
+            syncBtn.querySelector('.btn-text').textContent = '🔄 Syncing...';
+
+            parent.postMessage({ pluginMessage: { type: 'sync-to-figma', designSystemId } }, '*');
+        });
+
+        // AI Generate button
+        aiGenerateBtn.addEventListener('click', () => {
+            const prompt = document.getElementById('aiPrompt').value;
+            const type = document.getElementById('aiType').value;
+            const style = document.getElementById('aiStyle').value;
+            const platform = document.getElementById('aiPlatform').value;
+
+            if (!prompt.trim()) {
+                showStatus('error', 'Please describe what you want to create');
+                return;
+            }
+
+            aiGenerateBtn.disabled = true;
+            aiGenerateBtn.querySelector('.btn-text').textContent = 'Generating...';
+
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'ai-generate',
+                    prompt,
+                    options: { type, style, platform }
+                }
+            }, '*');
+        });
+
+        // Export button
+        exportBtn.addEventListener('click', () => {
+            exportBtn.disabled = true;
+            exportBtn.querySelector('.btn-text').textContent = '📤 Exporting...';
+            parent.postMessage({ pluginMessage: { type: 'export-selection' } }, '*');
+        });
+
+        // Listen for messages from plugin
+        window.onmessage = (event) => {
+            const msg = event.data.pluginMessage;
+
+            if (msg.type === 'update-status') {
+                showStatus(msg.status, msg.message);
+                resetButtons();
+            }
+
+            if (msg.type === 'show-preview') {
+                showPreview(msg.preview);
+            }
+
+            if (msg.type === 'export-json') {
+                downloadJSON(msg.json);
+                resetButtons();
+            }
+        };
+
+        // Show status
+        function showStatus(type, message) {
+            statusEl.className = `status ${type}`;
+
+            if (type === 'loading') {
+                statusEl.innerHTML = `<div class="spinner"></div><span>${message}</span>`;
+            } else {
+                statusEl.textContent = message;
+            }
+        }
+
+        // Show preview
+        function showPreview(preview) {
+            previewEl.className = 'preview show';
+            previewEl.innerHTML = `
+        <div class="preview-title">${preview.name}</div>
+        <div class="preview-stats">
+          <div class="preview-stat">
+            <div class="preview-stat-value">${preview.colorCount || 0}</div>
+            <div class="preview-stat-label">Colors</div>
+          </div>
+          <div class="preview-stat">
+            <div class="preview-stat-value">${preview.typeScaleCount || 0}</div>
+            <div class="preview-stat-label">Type Sizes</div>
+          </div>
+          <div class="preview-stat">
+            <div class="preview-stat-value">${preview.componentCount || 0}</div>
+            <div class="preview-stat-label">Components</div>
+          </div>
+        </div>
+      `;
+        }
+
+        // Download JSON
+        function downloadJSON(jsonData) {
+            const jsonString = JSON.stringify(jsonData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `figma-export-${timestamp}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showStatus('success', `Downloaded: ${filename}`);
+        }
+
+        // Reset buttons
+        function resetButtons() {
+            importBtn.disabled = false;
+            importBtn.querySelector('.btn-text').textContent = 'Import Design System';
+            sampleBtn.disabled = false;
+            syncBtn.disabled = false;
+            syncBtn.querySelector('.btn-text').textContent = '🔄 Sync to Figma';
+            aiGenerateBtn.disabled = false;
+            aiGenerateBtn.querySelector('.btn-text').textContent = 'Generate with AI';
+            exportBtn.disabled = false;
+            exportBtn.querySelector('.btn-text').textContent = '📤 Export Selection to JSON';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,16 +1,24 @@
 {
-  "name": "System Design Generator",
-  "id": "system-design-generator",
+  "name": "System Design Generator Pro",
+  "id": "system-design-generator-pro",
   "api": "1.0.0",
-  "main": "code.js",
-  "ui": "ui.html",
+  "main": "code-enhanced.js",
+  "ui": "ui-enhanced.html",
   "editorType": [
-    "figma"
+    "figma",
+    "figjam"
   ],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://*.vercel.app",
+      "https://*.netlify.app"
+    ],
+    "devAllowedDomains": [
+      "http://localhost:3000"
+    ]
+  },
   "permissions": [
     "currentuser"
   ],
-  "enableProposedApi": false,
-  "build": "build.sh",
-  "description": "Import system design tokens and create Figma designs directly"
+  "enableProposedApi": false
 }

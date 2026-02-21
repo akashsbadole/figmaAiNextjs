@@ -125,3 +125,82 @@ export async function DELETE(
     )
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const { userId: clerkUserId } = await auth()
+
+    if (!clerkUserId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Find user in database
+    const user = await db.user.findUnique({
+      where: { clerkId: clerkUserId }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Get and verify conversation
+    const conversation = await db.conversation.findUnique({
+      where: { id }
+    })
+
+    if (!conversation || conversation.userId !== user.id) {
+      return NextResponse.json(
+        { error: 'Conversation not found' },
+        { status: 404 }
+      )
+    }
+
+    // Get request body
+    const body = await request.json()
+    const { title } = body
+
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      )
+    }
+
+    // Update conversation title
+    const updatedConversation = await db.conversation.update({
+      where: { id },
+      data: { title: title.trim() }
+    })
+
+    return NextResponse.json({
+      success: true,
+      conversation: {
+        id: updatedConversation.id,
+        title: updatedConversation.title,
+        type: updatedConversation.type,
+        createdAt: updatedConversation.createdAt,
+        updatedAt: updatedConversation.updatedAt
+      }
+    })
+
+  } catch (error) {
+    console.error('Error updating conversation:', error)
+    return NextResponse.json(
+      {
+        error: 'Failed to update conversation',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}

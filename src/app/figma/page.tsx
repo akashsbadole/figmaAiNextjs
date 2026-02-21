@@ -132,12 +132,6 @@ export default function FigmaPage() {
               </div>
             </div>
           </div>
-          <Link href="/agent">
-            <Button variant="outline" size="sm">
-              <Sparkles className="h-4 w-4 mr-2" />
-              UI/UX Agent
-            </Button>
-          </Link>
         </div>
       </header>
 

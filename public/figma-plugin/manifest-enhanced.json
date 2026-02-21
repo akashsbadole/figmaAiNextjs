@@ -1,0 +1,23 @@
+{
+    "name": "System Design Generator Pro",
+    "id": "system-design-generator-pro",
+    "api": "1.0.0",
+    "main": "code-enhanced.js",
+    "ui": "ui-enhanced.html",
+    "editorType": [
+        "figma",
+        "figjam"
+    ],
+    "networkAccess": {
+        "allowedDomains": [
+            "localhost:3000",
+            "*.vercel.app",
+            "*.netlify.app"
+        ]
+    },
+    "permissions": [
+        "currentuser"
+    ],
+    "enableProposedApi": false,
+    "description": "Import, sync, and generate design systems with AI. Create Figma designs from natural language descriptions."
+}

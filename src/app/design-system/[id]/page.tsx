@@ -28,7 +28,10 @@ import {
   Wind,
   FileCode,
   Figma,
-  ExternalLink
+  ExternalLink,
+  Settings,
+  Component,
+  Palette as PaletteIcon
 } from 'lucide-react'
 
 interface ColorScale {
@@ -106,7 +109,7 @@ export default function DesignSystemPreviewPage() {
     if (id) {
       fetchDesignSystemById(id)
     }
-    
+
     return () => {
       clearCurrentDesignSystem()
     }
@@ -127,13 +130,13 @@ export default function DesignSystemPreviewPage() {
 
   const handleImportToFigma = async () => {
     if (!currentDesignSystem) return
-    
+
     try {
       const tokensData = await exportDesignSystem(id, 'tokens-studio')
       if (!tokensData) throw new Error('Export failed')
-      
+
       const parsedTokens = JSON.parse(tokensData)
-      
+
       const blob = new Blob([JSON.stringify(parsedTokens, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -143,9 +146,9 @@ export default function DesignSystemPreviewPage() {
       a.click()
       URL.revokeObjectURL(url)
       document.body.removeChild(a)
-      
+
       window.open('https://www.figma.com/files', '_blank')
-      
+
       alert('Tokens downloaded! Install Tokens Studio plugin in Figma and import the JSON file.')
     } catch (error) {
       console.error('Figma import error:', error)
@@ -251,15 +254,16 @@ export default function DesignSystemPreviewPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Figma Plugin Section */}
-            <div className="p-4 border rounded-lg bg-muted/30">
+            <div className="p-4 border rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10">
               <div className="flex items-center gap-2 mb-3">
                 <Figma className="h-5 w-5 text-purple-500" />
-                <h3 className="font-semibold">Figma Plugin</h3>
+                <h3 className="font-semibold">Sync to Figma Plugin</h3>
+                <Badge variant="secondary" className="ml-auto">NEW</Badge>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Use our Figma plugin to directly import this design system
+              <p className="text-sm text-muted-foreground mb-4">
+                Open our Figma plugin and automatically sync this design system to create a complete Figma file structure
               </p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <code className="text-xs bg-background px-2 py-1 rounded flex-1 font-mono">
                     {currentDesignSystem.id}
@@ -272,8 +276,22 @@ export default function DesignSystemPreviewPage() {
                     {copiedValue === 'design-id' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                  onClick={() => {
+                    copyToClipboard(currentDesignSystem.id, 'design-id-sync')
+                    window.open('figma://plugins/system-design-generator-pro', '_blank')
+                    setTimeout(() => {
+                      alert('Design System ID copied! Paste it in the Figma plugin Sync tab.')
+                    }, 500)
+                  }}
+                >
+                  <Figma className="h-4 w-4 mr-2" />
+                  Open Figma Plugin & Sync
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </Button>
                 <p className="text-xs text-muted-foreground">
-                  Copy this ID and use it in the Figma plugin
+                  This will open the Figma plugin. Paste the ID in the Sync tab to create your design system in Figma.
                 </p>
               </div>
             </div>
@@ -347,13 +365,16 @@ export default function DesignSystemPreviewPage() {
         </Card>
 
         <Tabs defaultValue="colors" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-9">
             <TabsTrigger value="colors"><Palette className="h-4 w-4 mr-2" />Colors</TabsTrigger>
             <TabsTrigger value="typography"><Type className="h-4 w-4 mr-2" />Typography</TabsTrigger>
             <TabsTrigger value="spacing"><Layout className="h-4 w-4 mr-2" />Spacing</TabsTrigger>
             <TabsTrigger value="borders"><Box className="h-4 w-4 mr-2" />Borders</TabsTrigger>
             <TabsTrigger value="shadows"><Layers className="h-4 w-4 mr-2" />Shadows</TabsTrigger>
             <TabsTrigger value="components"><Grid3x3 className="h-4 w-4 mr-2" />Components</TabsTrigger>
+            <TabsTrigger value="preferences"><Settings className="h-4 w-4 mr-2" />Preferences</TabsTrigger>
+            <TabsTrigger value="selected"><Component className="h-4 w-4 mr-2" />Selected</TabsTrigger>
+            <TabsTrigger value="tokens"><PaletteIcon className="h-4 w-4 mr-2" />Tokens</TabsTrigger>
           </TabsList>
 
           {/* Colors Tab */}
@@ -368,18 +389,18 @@ export default function DesignSystemPreviewPage() {
                   <div key={colorName} className="space-y-2">
                     <h3 className="text-lg font-semibold capitalize">{colorName}</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-11 gap-2">                      {(Object.entries(colorScale) as [string, string][]).map(([shade, hex]) => (
-                        <button
-                          key={shade}
-                          onClick={() => copyToClipboard(hex, `${colorName}-${shade}`)}
-                          className="group relative aspect-square rounded-lg overflow-hidden border-2 hover:scale-110 transition-all"
-                          style={{ backgroundColor: hex }}
-                          title={`${colorName}-${shade}: ${hex}`}
-                        >
-                          <span className="absolute inset-0 flex items-center justify-center text-xs font-medium bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {shade}
-                          </span>
-                        </button>
-                      ))}
+                      <button
+                        key={shade}
+                        onClick={() => copyToClipboard(hex, `${colorName}-${shade}`)}
+                        className="group relative aspect-square rounded-lg overflow-hidden border-2 hover:scale-110 transition-all"
+                        style={{ backgroundColor: hex }}
+                        title={`${colorName}-${shade}: ${hex}`}
+                      >
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-medium bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {shade}
+                        </span>
+                      </button>
+                    ))}
                     </div>
                   </div>
                 ))}
@@ -702,6 +723,216 @@ export default function DesignSystemPreviewPage() {
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Design Preferences Tab */}
+          <TabsContent value="preferences" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>UI/UX Design Preferences</CardTitle>
+                <CardDescription>Advanced configuration options used when generating this design system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {currentDesignSystem.designPreferences ? (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {Object.entries(currentDesignSystem.designPreferences).map(([key, value]) => (
+                      value && (
+                        <div key={key} className="flex items-center justify-between p-3 border rounded-lg">
+                          <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                          <Badge variant="secondary">{String(value)}</Badge>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Settings className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No design preferences were specified when generating this design system.</p>
+                    <p className="text-sm mt-2">Go to Generate page to create a new design system with custom preferences.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Selected Components Tab */}
+          <TabsContent value="selected" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Selected Components</CardTitle>
+                <CardDescription>Components that were included in this design system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {currentDesignSystem.selectedComponents && currentDesignSystem.selectedComponents.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {currentDesignSystem.selectedComponents.map((component) => (
+                      <Badge key={component} variant="outline" className="text-sm py-1.5 px-3">
+                        {component}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Component className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No specific components were selected when generating this design system.</p>
+                    <p className="text-sm mt-2">Go to Generate page to create a new design system with component selection.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Custom Design Tokens Tab */}
+          <TabsContent value="tokens" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Design Tokens</CardTitle>
+                <CardDescription>Custom color, typography, and spacing values used when generating</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {currentDesignSystem.customTokens ? (
+                  <div className="space-y-6">
+                    {/* Custom Colors */}
+                    {(currentDesignSystem.customTokens.primaryColor || currentDesignSystem.customTokens.secondaryColor || currentDesignSystem.customTokens.accentColor) && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold">Custom Colors</h4>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          {currentDesignSystem.customTokens.primaryColor && (
+                            <div className="flex items-center gap-3 p-3 border rounded-lg">
+                              <div className="w-8 h-8 rounded border" style={{ backgroundColor: currentDesignSystem.customTokens.primaryColor }} />
+                              <div>
+                                <p className="text-sm font-medium">Primary</p>
+                                <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.primaryColor}</code>
+                              </div>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.secondaryColor && (
+                            <div className="flex items-center gap-3 p-3 border rounded-lg">
+                              <div className="w-8 h-8 rounded border" style={{ backgroundColor: currentDesignSystem.customTokens.secondaryColor }} />
+                              <div>
+                                <p className="text-sm font-medium">Secondary</p>
+                                <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.secondaryColor}</code>
+                              </div>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.accentColor && (
+                            <div className="flex items-center gap-3 p-3 border rounded-lg">
+                              <div className="w-8 h-8 rounded border" style={{ backgroundColor: currentDesignSystem.customTokens.accentColor }} />
+                              <div>
+                                <p className="text-sm font-medium">Accent</p>
+                                <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.accentColor}</code>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Semantic Colors */}
+                    {(currentDesignSystem.customTokens.successColor || currentDesignSystem.customTokens.warningColor || currentDesignSystem.customTokens.errorColor) && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold">Semantic Colors</h4>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          {currentDesignSystem.customTokens.successColor && (
+                            <div className="flex items-center gap-3 p-3 border rounded-lg">
+                              <div className="w-8 h-8 rounded border" style={{ backgroundColor: currentDesignSystem.customTokens.successColor }} />
+                              <div>
+                                <p className="text-sm font-medium">Success</p>
+                                <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.successColor}</code>
+                              </div>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.warningColor && (
+                            <div className="flex items-center gap-3 p-3 border rounded-lg">
+                              <div className="w-8 h-8 rounded border" style={{ backgroundColor: currentDesignSystem.customTokens.warningColor }} />
+                              <div>
+                                <p className="text-sm font-medium">Warning</p>
+                                <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.warningColor}</code>
+                              </div>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.errorColor && (
+                            <div className="flex items-center gap-3 p-3 border rounded-lg">
+                              <div className="w-8 h-8 rounded border" style={{ backgroundColor: currentDesignSystem.customTokens.errorColor }} />
+                              <div>
+                                <p className="text-sm font-medium">Error</p>
+                                <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.errorColor}</code>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Typography */}
+                    {(currentDesignSystem.customTokens.fontFamily || currentDesignSystem.customTokens.headingFont || currentDesignSystem.customTokens.baseFontSize) && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold">Typography</h4>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          {currentDesignSystem.customTokens.fontFamily && (
+                            <div className="p-3 border rounded-lg">
+                              <p className="text-sm font-medium">Body Font</p>
+                              <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.fontFamily}</code>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.headingFont && (
+                            <div className="p-3 border rounded-lg">
+                              <p className="text-sm font-medium">Heading Font</p>
+                              <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.headingFont}</code>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.baseFontSize && (
+                            <div className="p-3 border rounded-lg">
+                              <p className="text-sm font-medium">Base Font Size</p>
+                              <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.baseFontSize}px</code>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Spacing & Sizing */}
+                    {(currentDesignSystem.customTokens.baseSpacing || currentDesignSystem.customTokens.borderRadius || currentDesignSystem.customTokens.buttonHeight || currentDesignSystem.customTokens.inputHeight) && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold">Spacing & Sizing</h4>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {currentDesignSystem.customTokens.baseSpacing && (
+                            <div className="p-3 border rounded-lg">
+                              <p className="text-sm font-medium">Base Spacing</p>
+                              <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.baseSpacing}px</code>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.borderRadius && (
+                            <div className="p-3 border rounded-lg">
+                              <p className="text-sm font-medium">Border Radius</p>
+                              <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.borderRadius}px</code>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.buttonHeight && (
+                            <div className="p-3 border rounded-lg">
+                              <p className="text-sm font-medium">Button Height</p>
+                              <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.buttonHeight}px</code>
+                            </div>
+                          )}
+                          {currentDesignSystem.customTokens.inputHeight && (
+                            <div className="p-3 border rounded-lg">
+                              <p className="text-sm font-medium">Input Height</p>
+                              <code className="text-xs text-muted-foreground">{currentDesignSystem.customTokens.inputHeight}px</code>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <PaletteIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No custom tokens were specified when generating this design system.</p>
+                    <p className="text-sm mt-2">Go to Generate page to create a new design system with custom tokens.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

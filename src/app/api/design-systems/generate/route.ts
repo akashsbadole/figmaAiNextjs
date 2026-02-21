@@ -321,12 +321,22 @@ export async function POST(request: NextRequest) {
     // Parse request body
     let prompt: string
     let industry: string | undefined
+    let designPreferences: any = undefined
+    let selectedComponents: string[] | undefined = undefined
+    let customTokens: any = undefined
+    
     try {
       const body = await request.json()
       prompt = body.prompt
       industry = body.industry
+      designPreferences = body.designPreferences
+      selectedComponents = body.selectedComponents
+      customTokens = body.customTokens
       console.log('[Design System Generate] Prompt:', prompt?.substring(0, 100))
       console.log('[Design System Generate] Industry:', industry)
+      console.log('[Design System Generate] Design Preferences:', designPreferences ? 'provided' : 'not provided')
+      console.log('[Design System Generate] Selected Components:', selectedComponents?.length || 0)
+      console.log('[Design System Generate] Custom Tokens:', customTokens ? 'provided' : 'not provided')
     } catch (parseError) {
       console.error('[Design System Generate] Failed to parse request body:', parseError)
       return NextResponse.json(
@@ -452,24 +462,54 @@ export async function POST(request: NextRequest) {
     // Create the design system
     console.log('[Design System Generate] Saving design system to database...')
     try {
-      const savedSystem = await db.designSystem.create({
-        data: {
-          name,
-          description: prompt.substring(0, 200),
-          prompt,
-          userId: user.id,
-          colors: JSON.stringify(designSystem.colors),
-          typography: JSON.stringify(designSystem.typography),
-          spacing: JSON.stringify(designSystem.spacing),
-          borderRadius: JSON.stringify(designSystem.borderRadius),
-          shadows: JSON.stringify(designSystem.shadows),
-          components: JSON.stringify(designSystem.components),
-          industry: industry && industry !== 'none' ? industry : null,
-          isPublic: false,
-          shareSlug
-        }
-      })
+      // Build the complete data object
+      const data: any = {
+        name,
+        description: prompt.substring(0, 200),
+        prompt,
+        userId: user.id,
+        colors: JSON.stringify(designSystem.colors),
+        typography: JSON.stringify(designSystem.typography),
+        spacing: JSON.stringify(designSystem.spacing),
+        borderRadius: JSON.stringify(designSystem.borderRadius),
+        shadows: JSON.stringify(designSystem.shadows),
+        components: JSON.stringify(designSystem.components),
+        industry: industry && industry !== 'none' ? industry : null,
+        isPublic: false,
+        shareSlug
+      }
+
+      // Add advanced options if provided
+      if (designPreferences) {
+        data.designPreferences = JSON.stringify(designPreferences)
+      }
+      if (selectedComponents) {
+        data.selectedComponents = JSON.stringify(selectedComponents)
+      }
+      if (customTokens) {
+        data.customTokens = JSON.stringify(customTokens)
+      }
+
+      const savedSystem = await db.designSystem.create({ data })
       console.log('[Design System Generate] Design system saved:', savedSystem.id)
+
+      // Add to design history
+      try {
+        await db.designHistory.create({
+          data: {
+            userId: user.id,
+            designSystemId: savedSystem.id,
+            name: savedSystem.name,
+            description: savedSystem.description,
+            prompt: prompt,
+            type: 'design-system'
+          }
+        })
+        console.log('[Design System Generate] Added to design history:', savedSystem.id)
+      } catch (historyError) {
+        // Log error but don't fail the whole request if history fails
+        console.error('[Design System Generate] Failed to add to history:', historyError)
+      }
 
       return NextResponse.json({
         success: true,

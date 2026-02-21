@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { toast } from 'sonner';
 
 // ============================================
 // Type Definitions
@@ -130,6 +131,39 @@ export interface DesignSystemComponents {
   modal: ModalComponent;
 }
 
+// Advanced Options Types
+export interface DesignPreferences {
+  colorScheme?: string;
+  designStyle?: string;
+  targetPlatform?: string;
+  accessibility?: string;
+  brandPersonality?: string;
+  componentStyle?: string;
+  layoutSystem?: string;
+  typographyScale?: string;
+  spacingSystem?: string;
+  animationStyle?: string;
+  iconStyle?: string;
+  shadowDepth?: string;
+  borderStyle?: string;
+}
+
+export interface CustomTokens {
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  errorColor?: string;
+  warningColor?: string;
+  successColor?: string;
+  fontFamily?: string;
+  headingFont?: string;
+  baseFontSize?: string;
+  baseSpacing?: string;
+  borderRadius?: string;
+  buttonHeight?: string;
+  inputHeight?: string;
+}
+
 export interface DesignSystem {
   id: string;
   name: string;
@@ -142,6 +176,10 @@ export interface DesignSystem {
   borderRadius: DesignSystemBorderRadius;
   shadows: DesignSystemShadows;
   components: DesignSystemComponents;
+  // Advanced Options
+  designPreferences?: DesignPreferences;
+  selectedComponents?: string[];
+  customTokens?: CustomTokens;
   industry: string | null;
   category: string | null;
   version: number;
@@ -182,6 +220,37 @@ export interface FetchDesignSystemsResponse {
 export interface GenerateDesignSystemRequest {
   prompt: string;
   industry?: string;
+  designPreferences?: {
+    colorScheme?: string;
+    designStyle?: string;
+    targetPlatform?: string;
+    accessibility?: string;
+    brandPersonality?: string;
+    componentStyle?: string;
+    layoutSystem?: string;
+    typographyScale?: string;
+    spacingSystem?: string;
+    animationStyle?: string;
+    iconStyle?: string;
+    shadowDepth?: string;
+    borderStyle?: string;
+  };
+  selectedComponents?: string[];
+  customTokens?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    accentColor?: string;
+    errorColor?: string;
+    warningColor?: string;
+    successColor?: string;
+    fontFamily?: string;
+    headingFont?: string;
+    baseFontSize?: string;
+    baseSpacing?: string;
+    borderRadius?: string;
+    buttonHeight?: string;
+    inputHeight?: string;
+  };
 }
 
 export interface GenerateDesignSystemResponse {
@@ -271,6 +340,8 @@ export interface DesignSystemActions {
   fetchDesignHistory: (options?: { type?: string; limit?: number }) => Promise<void>;
   addToHistory: (entry: { designSystemId: string; name: string; description?: string; prompt: string; type?: string }) => Promise<boolean>;
   clearDesignHistory: () => Promise<boolean>;
+  deleteHistoryItem: (id: string) => Promise<boolean>;
+  renameHistoryItem: (id: string, name: string) => Promise<boolean>;
   
   // Export Operations
   exportDesignSystem: (id: string, format: 'json' | 'css' | 'tailwind' | 'scss' | 'figma' | 'figma-json' | 'tokens-studio') => Promise<string | null>;
@@ -537,6 +608,54 @@ export const useDesignSystemStore = create<DesignSystemStore>()(
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to clear design history';
           set({ historyError: message });
+          return false;
+        }
+      },
+
+      deleteHistoryItem: async (id: string) => {
+        try {
+          const response = await fetch(`/api/design-systems/history/${id}`, {
+            method: 'DELETE',
+          });
+          
+          await handleResponse(response);
+          
+          set((state) => ({
+            designHistory: state.designHistory.filter((item) => item.id !== id),
+          }));
+          
+          toast.success('History item deleted');
+          return true;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to delete history item';
+          set({ historyError: message });
+          toast.error(message);
+          return false;
+        }
+      },
+
+      renameHistoryItem: async (id: string, name: string) => {
+        try {
+          const response = await fetch(`/api/design-systems/history/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name }),
+          });
+          
+          await handleResponse(response);
+          
+          set((state) => ({
+            designHistory: state.designHistory.map((item) =>
+              item.id === id ? { ...item, name } : item
+            ),
+          }));
+          
+          toast.success('History item renamed');
+          return true;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Failed to rename history item';
+          set({ historyError: message });
+          toast.error(message);
           return false;
         }
       },

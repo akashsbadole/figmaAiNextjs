@@ -57,6 +57,11 @@ model DesignSystem {
   shadows           String                 // JSON: { sm, md, lg, xl }
   components        String                 // JSON: { button, card, input, modal, etc. }
 
+  // Advanced Options (stored as JSON)
+  designPreferences String?                // JSON: { colorScheme, designStyle, targetPlatform, accessibility, brandPersonality, componentStyle, layoutSystem, typographyScale, spacingSystem, animationStyle, iconStyle, shadowDepth, borderStyle }
+  selectedComponents String?               // JSON: { selectedComponents: string[] }
+  customTokens      String?                // JSON: { primaryColor, secondaryColor, accentColor, errorColor, warningColor, successColor, fontFamily, headingFont, baseFontSize, baseSpacing, borderRadius, buttonHeight, inputHeight }
+
   // Metadata
   category          String?
   industry          String?

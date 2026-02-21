@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -8,6 +8,22 @@ import { useDesignSystemStore } from '@/store/useDesignSystemStore'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   Loader2,
@@ -16,7 +32,10 @@ import {
   Palette,
   Layers,
   Server,
-  ExternalLink
+  ExternalLink,
+  MoreVertical,
+  Pencil,
+  Link2,
 } from 'lucide-react'
 
 interface HistoryItem {
@@ -32,7 +51,16 @@ interface HistoryItem {
 export default function HistoryPage() {
   const { isLoaded, isSignedIn } = useAuth()
   const router = useRouter()
-  const { designHistory, isLoadingHistory, historyError, fetchDesignHistory, clearDesignHistory } = useDesignSystemStore()
+  const { designHistory, isLoadingHistory, historyError, fetchDesignHistory, clearDesignHistory, deleteHistoryItem, renameHistoryItem } = useDesignSystemStore()
+
+  // Rename dialog state
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false)
+  const [itemToRename, setItemToRename] = useState<HistoryItem | null>(null)
+  const [newName, setNewName] = useState('')
+
+  // Delete confirmation dialog state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<HistoryItem | null>(null)
 
   useEffect(() => {
     if (!isLoaded) return
@@ -48,6 +76,45 @@ export default function HistoryPage() {
   const handleClearHistory = async () => {
     if (!confirm('Are you sure you want to clear all history?')) return
     await clearDesignHistory()
+  }
+
+  // Rename handlers
+  const openRenameDialog = (item: HistoryItem) => {
+    setItemToRename(item)
+    setNewName(item.name)
+    setIsRenameDialogOpen(true)
+  }
+
+  const handleRename = async () => {
+    if (!itemToRename || !newName.trim()) return
+    await renameHistoryItem(itemToRename.id, newName.trim())
+    setIsRenameDialogOpen(false)
+    setItemToRename(null)
+    setNewName('')
+  }
+
+  // Copy shareable link handler
+  const handleCopyLink = (item: HistoryItem) => {
+    if (!item.designSystemId) {
+      toast.error('No design system associated with this item')
+      return
+    }
+    const link = `${window.location.origin}/design-system/${item.designSystemId}`
+    navigator.clipboard.writeText(link)
+    toast.success('Link copied to clipboard')
+  }
+
+  // Delete handlers
+  const openDeleteDialog = (item: HistoryItem) => {
+    setItemToDelete(item)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleDelete = async () => {
+    if (!itemToDelete) return
+    await deleteHistoryItem(itemToDelete.id)
+    setIsDeleteDialogOpen(false)
+    setItemToDelete(null)
   }
 
   const getTypeIcon = (type: string) => {
@@ -165,9 +232,40 @@ export default function HistoryPage() {
                         </CardDescription>
                       </div>
                     </div>
-                    <Badge variant={getTypeBadgeVariant(item.type) as any}>
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getTypeBadgeVariant(item.type) as any}>
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openRenameDialog(item)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleCopyLink(item)}
+                            disabled={!item.designSystemId}
+                          >
+                            <Link2 className="h-4 w-4 mr-2" />
+                            Copy Shareable Link
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => openDeleteDialog(item)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -190,6 +288,57 @@ export default function HistoryPage() {
           </div>
         )}
       </main>
+
+      {/* Rename Dialog */}
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename History Item</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Enter new name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleRename()
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRename} disabled={!newName.trim()}>
+              Rename
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete History Item</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

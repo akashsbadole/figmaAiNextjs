@@ -10,205 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Palette, ArrowLeft, Sparkles, Loader2, Copy, Download, Check, Code2, ChevronDown, ChevronUp } from 'lucide-react'
-
-// Figma format JSON structure type
-interface FigmaTextChild {
-  type: 'text'
-  text: string
-  fontSize: number
-  fontWeight?: string
-  color: string
-}
-
-interface FigmaContainer {
-  name: string
-  type: 'container'
-  backgroundColor: string
-  padding: number
-  cornerRadius: number
-  children: FigmaTextChild[]
-}
-
-type FigmaFormatItem = FigmaContainer
-
-// Helper function to extract numeric value from string (e.g., "16px" -> 16)
-function parseNumericValue(value: string | undefined, defaultValue: number): number {
-  if (!value) return defaultValue
-  const parsed = parseFloat(value.replace(/[^0-9.-]/g, ''))
-  return isNaN(parsed) ? defaultValue : parsed
-}
-
-// Helper function to get color from design system color scale
-function getColorFromScale(colorScale: Record<string, string> | undefined, shade: string, fallback: string): string {
-  if (!colorScale) return fallback
-  return colorScale[shade] || colorScale['DEFAULT'] || fallback
-}
-
-// Helper function to get font weight string from design system
-function getFontWeight(typography: any, weightKey: string): string {
-  const weights = typography?.fontWeight || {}
-  const weightValue = weights[weightKey] || weights['medium'] || '500'
-  // Convert weight value to readable name
-  const weightMap: Record<string, string> = {
-    '100': 'Thin',
-    '200': 'ExtraLight',
-    '300': 'Light',
-    '400': 'Regular',
-    '500': 'Medium',
-    '600': 'SemiBold',
-    '700': 'Bold',
-    '800': 'ExtraBold',
-    '900': 'Black',
-  }
-  return weightMap[weightValue] || weightValue || 'Medium'
-}
-
-// Helper function to get font size from design system
-function getFontSize(typography: any, sizeKey: string, defaultSize: number): number {
-  const sizes = typography?.fontSize || {}
-  const sizeValue = sizes[sizeKey] || sizes['base']
-  return parseNumericValue(sizeValue, defaultSize)
-}
-
-// Helper function to get padding from design system spacing
-function getPadding(spacing: any, key: string, defaultPadding: number): number {
-  const values = spacing?.values || {}
-  const paddingValue = values[key] || values['4']
-  return parseNumericValue(paddingValue, defaultPadding)
-}
-
-// Helper function to get border radius from design system
-function getCornerRadius(borderRadius: any, key: string, defaultRadius: number): number {
-  if (!borderRadius) return defaultRadius
-  const radiusValue = borderRadius[key] || borderRadius['md']
-  return parseNumericValue(radiusValue, defaultRadius)
-}
-
-// Function to generate Figma format JSON from design system
-function generateFigmaFormatJson(designSystem: any): FigmaFormatItem[] {
-  // Extract design system properties with fallbacks
-  const colors = designSystem.colors || {}
-  const typography = designSystem.typography || {}
-  const spacing = designSystem.spacing || {}
-  const borderRadius = designSystem.borderRadius || {}
-  const components = designSystem.components || {}
-  const industry = designSystem.industry || 'general'
-
-  // Extract colors
-  const primaryColor = getColorFromScale(colors.primary, '500', '#18A0FB')
-  const secondaryColor = getColorFromScale(colors.secondary, '500', '#6B7280')
-  const accentColor = getColorFromScale(colors.accent, '500', '#F59E0B')
-  const textColor = getColorFromScale(colors.neutral, '900', '#000000')
-  const textMutedColor = getColorFromScale(colors.neutral, '600', '#6B7280')
-  const backgroundColor = getColorFromScale(colors.neutral, '50', '#FFFFFF')
-  const cardBackground = components.card?.background || '#FFFFFF'
-
-  // Extract typography values
-  const titleFontSize = getFontSize(typography, 'xl', 18)
-  const bodyFontSize = getFontSize(typography, 'base', 16)
-  const titleFontWeight = getFontWeight(typography, 'medium')
-
-  // Extract spacing and border radius
-  const paddingValue = getPadding(spacing, '4', 16)
-  const cornerRadiusValue = getCornerRadius(borderRadius, 'md', 8)
-
-  // Generate content based on industry
-  const getIndustryContent = (industry: string) => {
-    const contentMap: Record<string, { items: Array<{ title: string; subtitle: string }> }> = {
-      fintech: {
-        items: [
-          { title: 'Premium Account', subtitle: '$29.99/mo' },
-          { title: 'Investment Portfolio', subtitle: '$39.99/mo' },
-          { title: 'Wealth Management', subtitle: '$49.99/mo' },
-        ]
-      },
-      ecommerce: {
-        items: [
-          { title: 'Product Item 1', subtitle: '$29.99' },
-          { title: 'Product Item 2', subtitle: '$39.99' },
-          { title: 'Product Item 3', subtitle: '$49.99' },
-        ]
-      },
-      healthtech: {
-        items: [
-          { title: 'Health Checkup', subtitle: '$29.99' },
-          { title: 'Wellness Plan', subtitle: '$39.99' },
-          { title: 'Premium Care', subtitle: '$49.99' },
-        ]
-      },
-      edtech: {
-        items: [
-          { title: 'Basic Course', subtitle: '$29.99' },
-          { title: 'Pro Course', subtitle: '$39.99' },
-          { title: 'Expert Bundle', subtitle: '$49.99' },
-        ]
-      },
-      saas: {
-        items: [
-          { title: 'Starter Plan', subtitle: '$29.99/mo' },
-          { title: 'Professional', subtitle: '$39.99/mo' },
-          { title: 'Enterprise', subtitle: '$49.99/mo' },
-        ]
-      },
-      consumer: {
-        items: [
-          { title: 'Basic Tier', subtitle: '$29.99' },
-          { title: 'Plus Tier', subtitle: '$39.99' },
-          { title: 'Premium Tier', subtitle: '$49.99' },
-        ]
-      },
-      enterprise: {
-        items: [
-          { title: 'Team License', subtitle: '$29.99/user' },
-          { title: 'Business Suite', subtitle: '$39.99/user' },
-          { title: 'Enterprise Pro', subtitle: '$49.99/user' },
-        ]
-      },
-      agency: {
-        items: [
-          { title: 'Brand Package', subtitle: '$29.99' },
-          { title: 'Design Sprint', subtitle: '$39.99' },
-          { title: 'Full Service', subtitle: '$49.99' },
-        ]
-      },
-      general: {
-        items: [
-          { title: 'Item 1', subtitle: '$29.99' },
-          { title: 'Item 2', subtitle: '$39.99' },
-          { title: 'Item 3', subtitle: '$49.99' },
-        ]
-      }
-    }
-    return contentMap[industry] || contentMap.general
-  }
-
-  const content = getIndustryContent(industry)
-
-  // Generate items dynamically based on design system
-  return content.items.map((item, index) => ({
-    name: `Item ${index + 1}`,
-    type: "container",
-    backgroundColor: cardBackground,
-    padding: paddingValue,
-    cornerRadius: cornerRadiusValue,
-    children: [
-      {
-        type: "text",
-        text: item.title,
-        fontSize: titleFontSize,
-        fontWeight: titleFontWeight,
-        color: textColor
-      },
-      {
-        type: "text",
-        text: item.subtitle,
-        fontSize: bodyFontSize,
-        color: primaryColor
-      }
-    ]
-  }))
-}
+import { Palette, ArrowLeft, Sparkles, Loader2, Copy, Download, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { generateFigmaJsonFromDesignSystem } from '@/lib/figma-template-generator'
+import type { FigmaJsonRoot } from '@/lib/figma-json-format'
 
 const EXAMPLE_PROMPTS = [
   "Create a fintech dashboard design system with modern blue theme, professional, minimal, accessibility friendly.",
@@ -220,6 +24,7 @@ const EXAMPLE_PROMPTS = [
 export default function GeneratePage() {
   const router = useRouter()
   const { isLoaded, isSignedIn } = useUser()
+  const [systemName, setSystemName] = useState('')
   const [prompt, setPrompt] = useState('')
   const [industry, setIndustry] = useState('')
   const [colorScheme, setColorScheme] = useState('')
@@ -237,10 +42,114 @@ export default function GeneratePage() {
   const [borderStyle, setBorderStyle] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showUIPreferences, setShowUIPreferences] = useState(false)
+  const [showComponentSelection, setShowComponentSelection] = useState(false)
+  const [showCustomTokens, setShowCustomTokens] = useState(false)
+  const [selectedComponents, setSelectedComponents] = useState<string[]>([
+    'buttons', 'inputs', 'cards', 'typography', 'colors', 'spacing'
+  ])
+
+  // Custom Design Tokens
+  const [primaryColor, setPrimaryColor] = useState('#3b82f6')
+  const [secondaryColor, setSecondaryColor] = useState('#8b5cf6')
+  const [accentColor, setAccentColor] = useState('#10b981')
+  const [errorColor, setErrorColor] = useState('#ef4444')
+  const [warningColor, setWarningColor] = useState('#f59e0b')
+  const [successColor, setSuccessColor] = useState('#22c55e')
+  const [fontFamily, setFontFamily] = useState('')
+  const [headingFont, setHeadingFont] = useState('')
+  const [baseFontSize, setBaseFontSize] = useState('16')
+  const [baseSpacing, setBaseSpacing] = useState('8')
+  const [borderRadius, setBorderRadius] = useState('8')
+  const [buttonHeight, setButtonHeight] = useState('40')
+  const [inputHeight, setInputHeight] = useState('40')
   const [generatedDesignSystem, setGeneratedDesignSystem] = useState<any>(null)
-  const [figmaJson, setFigmaJson] = useState<FigmaFormatItem[] | null>(null)
+  const [figmaJson, setFigmaJson] = useState<FigmaJsonRoot | null>(null)
   const [copied, setCopied] = useState(false)
   const { isCreating, createDesignSystem, currentDesignSystem, fetchDesignSystemById } = useDesignSystemStore()
+
+  // Component categories for selection
+  const componentCategories = {
+    'Foundations': [
+      { id: 'colors', name: 'Color Palette', description: 'Primary, secondary, semantic colors' },
+      { id: 'typography', name: 'Typography', description: 'Font families, sizes, weights' },
+      { id: 'spacing', name: 'Spacing Scale', description: 'Margin, padding system' },
+      { id: 'elevation', name: 'Elevation & Shadows', description: 'Shadow depths, z-index' },
+      { id: 'borders', name: 'Borders & Radius', description: 'Border styles, corner radius' },
+      { id: 'icons', name: 'Icon System', description: 'Icon library and guidelines' },
+    ],
+    'Basic Components': [
+      { id: 'buttons', name: 'Buttons', description: 'Primary, secondary, ghost variants' },
+      { id: 'inputs', name: 'Input Fields', description: 'Text, email, password inputs' },
+      { id: 'checkboxes', name: 'Checkboxes & Radio', description: 'Selection controls' },
+      { id: 'toggles', name: 'Toggles & Switches', description: 'On/off controls' },
+      { id: 'badges', name: 'Badges & Tags', description: 'Status indicators, labels' },
+      { id: 'avatars', name: 'Avatars', description: 'User profile images' },
+      { id: 'links', name: 'Links', description: 'Text links with states' },
+    ],
+    'Feedback & Overlays': [
+      { id: 'alerts', name: 'Alerts & Banners', description: 'Success, warning, error messages' },
+      { id: 'modals', name: 'Modals & Dialogs', description: 'Pop-up windows' },
+      { id: 'tooltips', name: 'Tooltips', description: 'Hover information' },
+      { id: 'loaders', name: 'Loaders & Progress', description: 'Spinners, progress bars' },
+      { id: 'toasts', name: 'Toasts & Snackbars', description: 'Temporary notifications' },
+      { id: 'popovers', name: 'Popovers', description: 'Contextual overlays' },
+    ],
+    'Navigation': [
+      { id: 'menus', name: 'Menus & Dropdowns', description: 'Navigation menus' },
+      { id: 'breadcrumbs', name: 'Breadcrumbs', description: 'Path navigation' },
+      { id: 'tabs', name: 'Tabs', description: 'Content switching' },
+      { id: 'pagination', name: 'Pagination', description: 'Page navigation' },
+      { id: 'accordion', name: 'Accordion', description: 'Expandable sections' },
+      { id: 'navbar', name: 'Navigation Bar', description: 'Top/side navigation' },
+      { id: 'sidebar', name: 'Sidebar', description: 'Side panel navigation' },
+    ],
+    'Data Display': [
+      { id: 'cards', name: 'Cards', description: 'Content containers' },
+      { id: 'tables', name: 'Data Tables', description: 'Sortable, filterable tables' },
+      { id: 'lists', name: 'Lists', description: 'Ordered and unordered lists' },
+      { id: 'stats', name: 'Stats & KPIs', description: 'Metric displays' },
+      { id: 'charts', name: 'Charts & Graphs', description: 'Data visualization' },
+      { id: 'timeline', name: 'Timeline', description: 'Chronological events' },
+      { id: 'tree', name: 'Tree View', description: 'Hierarchical data' },
+    ],
+    'Forms & Input': [
+      { id: 'forms', name: 'Form Layouts', description: 'Complete form structures' },
+      { id: 'textarea', name: 'Text Area', description: 'Multi-line text input' },
+      { id: 'select', name: 'Select Dropdowns', description: 'Option selection' },
+      { id: 'datepicker', name: 'Date Picker', description: 'Calendar selection' },
+      { id: 'slider', name: 'Sliders', description: 'Range selection' },
+      { id: 'fileupload', name: 'File Upload', description: 'Drag-drop file input' },
+      { id: 'multiselect', name: 'Multi-Select', description: 'Tag-based selection' },
+    ],
+    'Layout & Structure': [
+      { id: 'grid', name: 'Grid System', description: '12-column responsive grid' },
+      { id: 'containers', name: 'Containers', description: 'Content wrappers' },
+      { id: 'dividers', name: 'Dividers', description: 'Section separators' },
+      { id: 'aspectratio', name: 'Aspect Ratio', description: 'Responsive containers' },
+      { id: 'carousel', name: 'Carousel', description: 'Image/content slider' },
+      { id: 'emptystate', name: 'Empty States', description: 'No data displays' },
+    ],
+  }
+
+  const toggleComponent = (componentId: string) => {
+    setSelectedComponents(prev =>
+      prev.includes(componentId)
+        ? prev.filter(id => id !== componentId)
+        : [...prev, componentId]
+    )
+  }
+
+  const selectAllInCategory = (category: string) => {
+    const categoryComponents = componentCategories[category as keyof typeof componentCategories].map(c => c.id)
+    setSelectedComponents(prev => {
+      const allSelected = categoryComponents.every(id => prev.includes(id))
+      if (allSelected) {
+        return prev.filter(id => !categoryComponents.includes(id))
+      } else {
+        return [...new Set([...prev, ...categoryComponents])]
+      }
+    })
+  }
 
   // Redirect to sign in if not authenticated
   useEffect(() => {
@@ -252,7 +161,7 @@ export default function GeneratePage() {
   // Auto-generate Figma JSON when design system is loaded
   useEffect(() => {
     if (currentDesignSystem && generatedDesignSystem && !figmaJson) {
-      const figmaData = generateFigmaFormatJson(currentDesignSystem)
+      const figmaData = generateFigmaJsonFromDesignSystem(currentDesignSystem)
       setFigmaJson(figmaData)
     }
   }, [currentDesignSystem, generatedDesignSystem, figmaJson])
@@ -274,8 +183,21 @@ export default function GeneratePage() {
   const handleGenerate = async () => {
     if (!prompt.trim()) return
 
+    // Generate default system name if not provided
+    let finalSystemName = systemName.trim()
+    if (!finalSystemName) {
+      // Create default name from industry or prompt
+      if (industry && industry !== 'none') {
+        finalSystemName = `${industry.charAt(0).toUpperCase() + industry.slice(1)} Design System`
+      } else {
+        // Extract first few words from prompt
+        const words = prompt.trim().split(' ').slice(0, 3).join(' ')
+        finalSystemName = `${words} Design System`
+      }
+    }
+
     // Build enhanced prompt with all selections
-    let enhancedPrompt = prompt
+    let enhancedPrompt = `Design System Name: ${finalSystemName}. ${prompt}`
 
     if (colorScheme) {
       enhancedPrompt += ` Use a ${colorScheme} color scheme.`
@@ -317,8 +239,78 @@ export default function GeneratePage() {
       enhancedPrompt += ` Border style: ${borderStyle}.`
     }
 
+    // Add custom design tokens if provided
+    const customTokens: string[] = []
+    if (primaryColor !== '#3b82f6') customTokens.push(`Primary color: ${primaryColor}`)
+    if (secondaryColor !== '#8b5cf6') customTokens.push(`Secondary color: ${secondaryColor}`)
+    if (accentColor !== '#10b981') customTokens.push(`Accent color: ${accentColor}`)
+    if (errorColor !== '#ef4444') customTokens.push(`Error color: ${errorColor}`)
+    if (warningColor !== '#f59e0b') customTokens.push(`Warning color: ${warningColor}`)
+    if (successColor !== '#22c55e') customTokens.push(`Success color: ${successColor}`)
+    if (fontFamily) customTokens.push(`Body font: ${fontFamily}`)
+    if (headingFont) customTokens.push(`Heading font: ${headingFont}`)
+    if (baseFontSize !== '16') customTokens.push(`Base font size: ${baseFontSize}px`)
+    if (baseSpacing !== '8') customTokens.push(`Base spacing: ${baseSpacing}px`)
+    if (borderRadius !== '8') customTokens.push(`Border radius: ${borderRadius}px`)
+    if (buttonHeight !== '40') customTokens.push(`Button height: ${buttonHeight}px`)
+    if (inputHeight !== '40') customTokens.push(`Input height: ${inputHeight}px`)
+
+    if (customTokens.length > 0) {
+      enhancedPrompt += ` Custom design tokens: ${customTokens.join(', ')}.`
+    }
+
+    if (selectedComponents.length > 0) {
+      const componentNames = selectedComponents.map(id => {
+        for (const category of Object.values(componentCategories)) {
+          const component = category.find(c => c.id === id)
+          if (component) return component.name
+        }
+        return id
+      }).join(', ')
+      enhancedPrompt += ` Include these components: ${componentNames}.`
+    }
+
     try {
-      const result = await createDesignSystem({ prompt: enhancedPrompt, industry })
+      // Prepare advanced options
+      const designPreferences = {
+        colorScheme: colorScheme || undefined,
+        designStyle: designStyle || undefined,
+        targetPlatform: targetPlatform || undefined,
+        accessibility: accessibility || undefined,
+        brandPersonality: brandPersonality || undefined,
+        componentStyle: componentStyle || undefined,
+        layoutSystem: layoutSystem || undefined,
+        typographyScale: typographyScale || undefined,
+        spacingSystem: spacingSystem || undefined,
+        animationStyle: animationStyle || undefined,
+        iconStyle: iconStyle || undefined,
+        shadowDepth: shadowDepth || undefined,
+        borderStyle: borderStyle || undefined,
+      }
+
+      const customTokens = {
+        primaryColor: primaryColor !== '#3b82f6' ? primaryColor : undefined,
+        secondaryColor: secondaryColor !== '#8b5cf6' ? secondaryColor : undefined,
+        accentColor: accentColor !== '#10b981' ? accentColor : undefined,
+        errorColor: errorColor !== '#ef4444' ? errorColor : undefined,
+        warningColor: warningColor !== '#f59e0b' ? warningColor : undefined,
+        successColor: successColor !== '#22c55e' ? successColor : undefined,
+        fontFamily: fontFamily || undefined,
+        headingFont: headingFont || undefined,
+        baseFontSize: baseFontSize !== '16' ? baseFontSize : undefined,
+        baseSpacing: baseSpacing !== '8' ? baseSpacing : undefined,
+        borderRadius: borderRadius !== '8' ? borderRadius : undefined,
+        buttonHeight: buttonHeight !== '40' ? buttonHeight : undefined,
+        inputHeight: inputHeight !== '40' ? inputHeight : undefined,
+      }
+
+      const result = await createDesignSystem({ 
+        prompt: enhancedPrompt, 
+        industry,
+        designPreferences: Object.values(designPreferences).some(v => v !== undefined) ? designPreferences : undefined,
+        selectedComponents: selectedComponents.length > 0 ? selectedComponents : undefined,
+        customTokens: Object.values(customTokens).some(v => v !== undefined) ? customTokens : undefined,
+      })
       if (result && result.id) {
         // Fetch the full design system to get all the data
         await fetchDesignSystemById(result.id)
@@ -327,7 +319,7 @@ export default function GeneratePage() {
         // Auto-generate Figma JSON after successful generation
         setTimeout(() => {
           if (currentDesignSystem) {
-            const figmaData = generateFigmaFormatJson(currentDesignSystem)
+            const figmaData = generateFigmaJsonFromDesignSystem(currentDesignSystem)
             setFigmaJson(figmaData)
           }
         }, 500)
@@ -347,7 +339,7 @@ export default function GeneratePage() {
   // Generate Figma JSON when design system is available
   const handleGenerateFigmaJson = () => {
     if (currentDesignSystem) {
-      const figmaData = generateFigmaFormatJson(currentDesignSystem)
+      const figmaData = generateFigmaJsonFromDesignSystem(currentDesignSystem)
       setFigmaJson(figmaData)
     }
   }
@@ -400,7 +392,7 @@ export default function GeneratePage() {
             <Link href="/dashboard">
               <Button variant="ghost">Dashboard</Button>
             </Link>
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </nav>
         </div>
       </header>
@@ -442,6 +434,26 @@ export default function GeneratePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* System Name Input */}
+              <div className="space-y-2">
+                <Label htmlFor="systemName">Design System Name (Optional)</Label>
+                <input
+                  id="systemName"
+                  type="text"
+                  placeholder="e.g., Acme Design System, MyBrand UI Kit (leave empty for auto-generated name)"
+                  value={systemName}
+                  onChange={(e) => setSystemName(e.target.value)}
+                  className="w-full px-3 py-2 text-base rounded-md border border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                <p className="text-sm text-muted-foreground">
+                  {systemName.trim()
+                    ? `Your system will be named: "${systemName.trim()}"`
+                    : industry && industry !== 'none'
+                      ? `Default name will be: "${industry.charAt(0).toUpperCase() + industry.slice(1)} Design System"`
+                      : 'A name will be auto-generated from your prompt'}
+                </p>
+              </div>
+
               {/* Prompt Input - Moved to top */}
               <div className="space-y-2">
                 <Label htmlFor="prompt">Your Design Vision</Label>
@@ -516,7 +528,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose color palette" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="monochromatic">Monochromatic</SelectItem>
                           <SelectItem value="analogous">Analogous</SelectItem>
                           <SelectItem value="complementary">Complementary</SelectItem>
@@ -538,7 +550,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose design approach" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="minimal">Minimal & Clean</SelectItem>
                           <SelectItem value="modern">Modern & Sleek</SelectItem>
                           <SelectItem value="playful">Playful & Fun</SelectItem>
@@ -560,7 +572,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Where will this be used?" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Universal</SelectItem>
+                          <SelectItem value="universal">Universal</SelectItem>
                           <SelectItem value="web">Web Application</SelectItem>
                           <SelectItem value="mobile">Mobile App (iOS/Android)</SelectItem>
                           <SelectItem value="desktop">Desktop Application</SelectItem>
@@ -579,7 +591,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Accessibility requirements" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Standard</SelectItem>
+                          <SelectItem value="standard">Standard</SelectItem>
                           <SelectItem value="wcag-aa">WCAG 2.1 AA Compliant</SelectItem>
                           <SelectItem value="wcag-aaa">WCAG 2.1 AAA Compliant</SelectItem>
                           <SelectItem value="high-contrast">High Contrast Mode</SelectItem>
@@ -598,7 +610,7 @@ export default function GeneratePage() {
                         <SelectValue placeholder="How should your brand feel?" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Auto-detect</SelectItem>
+                        <SelectItem value="auto">Auto-detect</SelectItem>
                         <SelectItem value="trustworthy">Trustworthy & Reliable</SelectItem>
                         <SelectItem value="innovative">Innovative & Cutting-edge</SelectItem>
                         <SelectItem value="friendly">Friendly & Approachable</SelectItem>
@@ -652,7 +664,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose component design" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="flat">Flat Design</SelectItem>
                           <SelectItem value="neumorphic">Neumorphic (Soft UI)</SelectItem>
                           <SelectItem value="glassmorphic">Glassmorphic (Frosted Glass)</SelectItem>
@@ -673,7 +685,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose layout approach" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="12-column">12 Column Grid</SelectItem>
                           <SelectItem value="8-point">8-Point Grid System</SelectItem>
                           <SelectItem value="4-point">4-Point Grid System</SelectItem>
@@ -693,7 +705,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose type scale" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="minor-second">Minor Second (1.067)</SelectItem>
                           <SelectItem value="major-second">Major Second (1.125)</SelectItem>
                           <SelectItem value="minor-third">Minor Third (1.200)</SelectItem>
@@ -714,7 +726,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose spacing scale" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="4px">4px Base (Tight)</SelectItem>
                           <SelectItem value="8px">8px Base (Standard)</SelectItem>
                           <SelectItem value="16px">16px Base (Spacious)</SelectItem>
@@ -733,7 +745,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose animation approach" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="none">No Animations</SelectItem>
                           <SelectItem value="subtle">Subtle & Minimal</SelectItem>
                           <SelectItem value="smooth">Smooth & Fluid</SelectItem>
@@ -754,7 +766,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose icon design" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="outline">Outline/Stroke</SelectItem>
                           <SelectItem value="filled">Filled/Solid</SelectItem>
                           <SelectItem value="duotone">Duotone</SelectItem>
@@ -774,7 +786,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose shadow style" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="none">No Shadows (Flat)</SelectItem>
                           <SelectItem value="subtle">Subtle Shadows</SelectItem>
                           <SelectItem value="medium">Medium Depth</SelectItem>
@@ -795,7 +807,7 @@ export default function GeneratePage() {
                           <SelectValue placeholder="Choose border approach" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
                           <SelectItem value="none">No Borders</SelectItem>
                           <SelectItem value="subtle">Subtle Borders</SelectItem>
                           <SelectItem value="prominent">Prominent Borders</SelectItem>
@@ -807,6 +819,383 @@ export default function GeneratePage() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Component Selection Toggle */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowComponentSelection(!showComponentSelection)}
+                  className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm">Component Selection</h3>
+                      <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                        {selectedComponents.length} selected
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Choose which components to include in your design system</p>
+                  </div>
+                  {showComponentSelection ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  )}
+                </button>
+              </div>
+
+              {/* Component Selection Content */}
+              {showComponentSelection && (
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border max-h-[600px] overflow-y-auto">
+                  {Object.entries(componentCategories).map(([category, components]) => (
+                    <div key={category} className="space-y-3">
+                      <div className="flex items-center justify-between sticky top-0 bg-muted/30 py-2 z-10">
+                        <h4 className="font-semibold text-sm">{category}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => selectAllInCategory(category)}
+                          className="h-7 text-xs"
+                        >
+                          {components.every(c => selectedComponents.includes(c.id)) ? 'Deselect All' : 'Select All'}
+                        </Button>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-2">
+                        {components.map((component) => (
+                          <label
+                            key={component.id}
+                            className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${selectedComponents.includes(component.id)
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                              }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedComponents.includes(component.id)}
+                              onChange={() => toggleComponent(component.id)}
+                              className="mt-1 h-4 w-4 rounded border-gray-300"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm">{component.name}</div>
+                              <div className="text-xs text-muted-foreground">{component.description}</div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Custom Design Tokens Toggle */}
+              <div className="border-t pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomTokens(!showCustomTokens)}
+                  className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm">Custom Design Tokens</h3>
+                      {(primaryColor !== '#3b82f6' || secondaryColor !== '#8b5cf6' || fontFamily || baseFontSize !== '16' || baseSpacing !== '8') && (
+                        <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                          Custom values set
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Specify exact colors, fonts, sizes, and spacing values</p>
+                  </div>
+                  {showCustomTokens ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                  )}
+                </button>
+              </div>
+
+              {/* Custom Design Tokens Content */}
+              {showCustomTokens && (
+                <div className="space-y-6 p-4 bg-muted/30 rounded-lg border">
+                  {/* Color Palette */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm">Color Palette</h4>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="primaryColor" className="flex items-center gap-2">
+                          Primary Color
+                          <div className="w-6 h-6 rounded border-2 border-white shadow-sm" style={{ backgroundColor: primaryColor }} />
+                        </Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="primaryColor"
+                            type="color"
+                            value={primaryColor}
+                            onChange={(e) => setPrimaryColor(e.target.value)}
+                            className="h-10 w-16 rounded border cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={primaryColor}
+                            onChange={(e) => setPrimaryColor(e.target.value)}
+                            className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                            placeholder="#3b82f6"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="secondaryColor" className="flex items-center gap-2">
+                          Secondary Color
+                          <div className="w-6 h-6 rounded border-2 border-white shadow-sm" style={{ backgroundColor: secondaryColor }} />
+                        </Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="secondaryColor"
+                            type="color"
+                            value={secondaryColor}
+                            onChange={(e) => setSecondaryColor(e.target.value)}
+                            className="h-10 w-16 rounded border cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={secondaryColor}
+                            onChange={(e) => setSecondaryColor(e.target.value)}
+                            className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                            placeholder="#8b5cf6"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="accentColor" className="flex items-center gap-2">
+                          Accent Color
+                          <div className="w-6 h-6 rounded border-2 border-white shadow-sm" style={{ backgroundColor: accentColor }} />
+                        </Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="accentColor"
+                            type="color"
+                            value={accentColor}
+                            onChange={(e) => setAccentColor(e.target.value)}
+                            className="h-10 w-16 rounded border cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={accentColor}
+                            onChange={(e) => setAccentColor(e.target.value)}
+                            className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                            placeholder="#10b981"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="successColor" className="flex items-center gap-2">
+                          Success Color
+                          <div className="w-6 h-6 rounded border-2 border-white shadow-sm" style={{ backgroundColor: successColor }} />
+                        </Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="successColor"
+                            type="color"
+                            value={successColor}
+                            onChange={(e) => setSuccessColor(e.target.value)}
+                            className="h-10 w-16 rounded border cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={successColor}
+                            onChange={(e) => setSuccessColor(e.target.value)}
+                            className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                            placeholder="#22c55e"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="warningColor" className="flex items-center gap-2">
+                          Warning Color
+                          <div className="w-6 h-6 rounded border-2 border-white shadow-sm" style={{ backgroundColor: warningColor }} />
+                        </Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="warningColor"
+                            type="color"
+                            value={warningColor}
+                            onChange={(e) => setWarningColor(e.target.value)}
+                            className="h-10 w-16 rounded border cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={warningColor}
+                            onChange={(e) => setWarningColor(e.target.value)}
+                            className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                            placeholder="#f59e0b"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="errorColor" className="flex items-center gap-2">
+                          Error Color
+                          <div className="w-6 h-6 rounded border-2 border-white shadow-sm" style={{ backgroundColor: errorColor }} />
+                        </Label>
+                        <div className="flex gap-2">
+                          <input
+                            id="errorColor"
+                            type="color"
+                            value={errorColor}
+                            onChange={(e) => setErrorColor(e.target.value)}
+                            className="h-10 w-16 rounded border cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={errorColor}
+                            onChange={(e) => setErrorColor(e.target.value)}
+                            className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                            placeholder="#ef4444"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Typography */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm">Typography</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="fontFamily">Body Font Family</Label>
+                        <input
+                          id="fontFamily"
+                          type="text"
+                          value={fontFamily}
+                          onChange={(e) => setFontFamily(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          placeholder="e.g., Inter, Roboto, system-ui"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="headingFont">Heading Font Family</Label>
+                        <input
+                          id="headingFont"
+                          type="text"
+                          value={headingFont}
+                          onChange={(e) => setHeadingFont(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          placeholder="e.g., Poppins, Montserrat (leave empty to use body font)"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="baseFontSize">Base Font Size (px)</Label>
+                        <input
+                          id="baseFontSize"
+                          type="number"
+                          min="12"
+                          max="24"
+                          value={baseFontSize}
+                          onChange={(e) => setBaseFontSize(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          placeholder="16"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Spacing & Sizing */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm">Spacing & Sizing</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="baseSpacing">Base Spacing Unit (px)</Label>
+                        <input
+                          id="baseSpacing"
+                          type="number"
+                          min="4"
+                          max="16"
+                          step="4"
+                          value={baseSpacing}
+                          onChange={(e) => setBaseSpacing(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          placeholder="8"
+                        />
+                        <p className="text-xs text-muted-foreground">All spacing will be multiples of this value</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="borderRadius">Border Radius (px)</Label>
+                        <input
+                          id="borderRadius"
+                          type="number"
+                          min="0"
+                          max="24"
+                          value={borderRadius}
+                          onChange={(e) => setBorderRadius(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          placeholder="8"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="buttonHeight">Button Height (px)</Label>
+                        <input
+                          id="buttonHeight"
+                          type="number"
+                          min="32"
+                          max="56"
+                          value={buttonHeight}
+                          onChange={(e) => setButtonHeight(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          placeholder="40"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="inputHeight">Input Field Height (px)</Label>
+                        <input
+                          id="inputHeight"
+                          type="number"
+                          min="32"
+                          max="56"
+                          value={inputHeight}
+                          onChange={(e) => setInputHeight(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background"
+                          placeholder="40"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reset Button */}
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setPrimaryColor('#3b82f6')
+                        setSecondaryColor('#8b5cf6')
+                        setAccentColor('#10b981')
+                        setErrorColor('#ef4444')
+                        setWarningColor('#f59e0b')
+                        setSuccessColor('#22c55e')
+                        setFontFamily('')
+                        setHeadingFont('')
+                        setBaseFontSize('16')
+                        setBaseSpacing('8')
+                        setBorderRadius('8')
+                        setButtonHeight('40')
+                        setInputHeight('40')
+                      }}
+                    >
+                      Reset to Defaults
+                    </Button>
                   </div>
                 </div>
               )}
