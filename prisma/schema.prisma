@@ -21,6 +21,12 @@ model User {
   email                      String                 @unique
   name                       String?
   imageUrl                   String?
+  
+  // User Status
+  status                     String                 @default("active") // active, suspended, banned
+  statusReason               String?                // Reason for suspension/ban
+  statusUpdatedAt            DateTime?
+  
   createdAt                  DateTime               @default(now())
   updatedAt                  DateTime               @updatedAt
 
@@ -37,6 +43,14 @@ model User {
   projects                   Project[]
   githubConnection           GitHubConnection?
   githubRepos                GitHubRepo[]
+  
+  // Subscription & Credits
+  subscription               Subscription?
+  creditTransactions         CreditTransaction[]
+  transactions               Transaction[]
+  activityLogs               UserActivityLog[]
+  supportTickets             SupportTicket[]
+  ticketResponses            TicketResponse[]
 }
 
 // ============ DESIGN SYSTEM ============
@@ -646,4 +660,344 @@ model Deployment {
   createdAt       DateTime @default(now())
   
   @@index([projectId])
+}
+
+// ============ SUBSCRIPTION & BILLING ============
+
+model SubscriptionPlan {
+  id                String   @id @default(cuid())
+  name              String   @unique // "basic", "pro", "enterprise"
+  displayName       String   // "Basic", "Pro", "Enterprise"
+  description       String?
+  price             Float    // Monthly price in USD
+  credits           Int      // Credits per month
+  features          String   // JSON array of features
+  
+  // Stripe/PayPal integration
+  paypalPlanId      String?  // PayPal plan ID
+  
+  // Limits
+  maxProjects       Int      @default(10)
+  maxTeamMembers    Int      @default(1)
+  prioritySupport   Boolean  @default(false)
+  
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  subscriptions     Subscription[]
+  
+  @@index([name])
+  @@index([isActive])
+}
+
+model Subscription {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planId            String
+  plan              SubscriptionPlan @relation(fields: [planId], references: [id])
+  
+  // Subscription details
+  status            String   @default("active") // active, cancelled, expired, past_due
+  currentPeriodStart DateTime
+  currentPeriodEnd  DateTime
+  
+  // PayPal integration
+  paypalSubscriptionId String?
+  paypalStatus      String?
+  
+  // Credits
+  creditsRemaining  Int      @default(0)
+  creditsUsed       Int      @default(0)
+  
+  // Billing
+  cancelAtPeriodEnd Boolean @default(false)
+  cancelledAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([paypalSubscriptionId])
+}
+
+model Transaction {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Transaction details
+  amount            Float
+  currency          String   @default("USD")
+  status            String   @default("pending") // pending, completed, failed, refunded
+  
+  // PayPal integration
+  paypalOrderId     String?
+  paypalCaptureId   String?
+  paypalPayerId     String?
+  
+  // Transaction type
+  type              String   // subscription, credit_purchase, refund
+  description       String?
+  
+  // Related subscription
+  subscriptionId    String?
+  
+  // Metadata
+  metadata          String?  // JSON for additional data
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([paypalOrderId])
+  @@index([createdAt])
+}
+
+model CreditTransaction {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Credit details
+  amount            Int      // Positive for credits added, negative for credits used
+  balance           Int      // Balance after transaction
+  
+  // Transaction type
+  type              String   // purchase, usage, refund, admin_adjustment, subscription
+  description       String?
+  
+  // Related entities
+  relatedEntityId   String?  // ID of the related entity (design system, conversation, etc.)
+  relatedEntityType String?  // Type of related entity
+  
+  // Admin adjustment reason
+  adminId           String?  // Admin who made the adjustment
+  adminReason       String?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ============ SUPPORT TICKETS ============
+
+model SupportTicket {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Ticket details
+  subject           String
+  description       String
+  status            String   @default("open") // open, in_progress, resolved, closed
+  priority          String   @default("medium") // low, medium, high, urgent
+  category          String   @default("general") // billing, technical, account, feature_request, bug, general
+  
+  // Assignment
+  assignedToId      String?  // Admin user ID
+  assignedAt        DateTime?
+  
+  // Resolution
+  resolvedAt        DateTime?
+  resolvedById      String?
+  resolution        String?
+  
+  // Metadata
+  tags              String?  // JSON array of tags
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  responses         TicketResponse[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model TicketResponse {
+  id                String   @id @default(cuid())
+  ticketId          String
+  ticket            SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  // Response details
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  message           String
+  isInternal        Boolean  @default(false) // Internal note vs customer-visible
+  
+  // Attachments
+  attachments       String?  // JSON array of attachment URLs
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([ticketId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============ USER ACTIVITY LOG ============
+
+model UserActivityLog {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Activity details
+  action            String   // login, logout, create_design, generate_system, etc.
+  entityType        String?  // design_system, conversation, project, etc.
+  entityId          String?
+  
+  // Request info
+  ipAddress         String?
+  userAgent         String?
+  
+  // Additional data
+  metadata          String?  // JSON for additional data
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+// ============ API KEY MANAGEMENT ============
+
+model APIKey {
+  id                String   @id @default(cuid())
+  provider          String   // google, openai, anthropic
+  name              String   // Friendly name
+  key               String   // Encrypted API key
+  
+  // Key status
+  isActive          Boolean  @default(true)
+  isPrimary         Boolean  @default(false) // Primary key for the provider
+  
+  // Rate limiting
+  rateLimitRpm      Int?     // Requests per minute
+  rateLimitTpm      Int?     // Tokens per minute
+  
+  // Cost tracking
+  totalCost         Float    @default(0)
+  monthlyCost       Float    @default(0)
+  costLimit         Float?   // Monthly cost limit
+  
+  // Usage stats
+  totalRequests     Int      @default(0)
+  lastUsedAt        DateTime?
+  
+  // Key rotation
+  version           Int      @default(1)
+  previousKey       String?  // Previous encrypted key (for rotation)
+  rotatedAt         DateTime?
+  
+  // Metadata
+  createdBy         String?  // Admin user ID
+  lastUpdatedBy     String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  usageLogs         APIUsageLog[]
+  
+  @@unique([provider, name])
+  @@index([provider])
+  @@index([isActive])
+  @@index([isPrimary])
+}
+
+model APIUsageLog {
+  id                String   @id @default(cuid())
+  apiKeyId          String
+  apiKey            APIKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  
+  // Usage details
+  userId            String?  // User who triggered the request
+  endpoint          String?  // API endpoint called
+  model             String?  // Model used (e.g., gpt-4, gemini-pro)
+  
+  // Tokens
+  promptTokens      Int?
+  completionTokens  Int?
+  totalTokens       Int?
+  
+  // Cost
+  cost              Float    @default(0)
+  
+  // Response
+  success           Boolean  @default(true)
+  errorMessage      String?
+  durationMs        Int?
+  
+  // Request metadata
+  requestId         String?  // Provider request ID
+  metadata          String?  // JSON for additional data
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([apiKeyId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([success])
+}
+
+// ============ SYSTEM SETTINGS ============
+
+model SystemSetting {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  value             String   // JSON value
+  description       String?
+  
+  // Metadata
+  updatedBy         String?  // Admin user ID
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([key])
+}
+
+// ============ EMAIL VERIFICATION OTP ============
+
+model EmailVerificationOTP {
+  id                String   @id @default(cuid())
+  email             String
+  otpCode           String
+  purpose           String   // "add_email", "verify_email", "change_email"
+  
+  // Expiration
+  expiresAt         DateTime
+  
+  // Verification status
+  isUsed            Boolean  @default(false)
+  usedAt            DateTime?
+  
+  // Related user (if adding to existing account)
+  userId            String?
+  
+  // New email (for email change)
+  newEmail          String?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([email])
+  @@index([otpCode])
+  @@index([expiresAt])
+  @@index([userId])
 }

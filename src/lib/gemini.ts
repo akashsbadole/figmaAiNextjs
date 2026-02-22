@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai'
+import { GoogleGenerativeAI, GenerativeModel, Part } from '@google/generative-ai'
 
 // Initialize Gemini AI
 const getGeminiModel = (modelName: string = 'gemini-2.5-flash'): GenerativeModel => {
@@ -115,6 +115,51 @@ export class GeminiAI {
     } catch (error) {
       console.error('Gemini AI error:', error)
       throw new Error(`Failed to generate JSON: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  async generateUIJson<T>(prompt: string, images?: string[], systemPrompt?: string): Promise<T> {
+    try {
+      const fullPrompt = systemPrompt
+        ? `${systemPrompt}\n\n${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown code blocks, no explanations.`
+        : `${prompt}\n\nIMPORTANT: Respond with valid JSON only. No markdown code blocks, no explanations.`
+
+      const parts: Part[] = [{ text: fullPrompt }]
+
+      if (images && images.length > 0) {
+        for (const base64Image of images) {
+          const matches = base64Image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/)
+          if (matches && matches.length === 3) {
+            parts.push({
+              inlineData: {
+                data: matches[2],
+                mimeType: matches[1]
+              }
+            })
+          } else {
+            parts.push({
+              inlineData: {
+                data: base64Image,
+                mimeType: 'image/jpeg'
+              }
+            })
+          }
+        }
+      }
+
+      const result = await this.model.generateContent(parts)
+      const response = await result.response
+      let text = response.text()
+
+      text = text
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim()
+
+      return JSON.parse(text) as T
+    } catch (error) {
+      console.error('Gemini AI error:', error)
+      throw new Error(`Failed to generate UI JSON: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 }

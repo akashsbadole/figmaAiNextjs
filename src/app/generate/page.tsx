@@ -10,9 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Palette, ArrowLeft, Sparkles, Loader2, Copy, Download, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Palette, ArrowLeft, Sparkles, Loader2, Copy, Download, Check, ChevronDown, ChevronUp, PenTool, Share2 } from 'lucide-react'
 import { generateFigmaJsonFromDesignSystem } from '@/lib/figma-template-generator'
 import type { FigmaJsonRoot } from '@/lib/figma-json-format'
+import dynamic from 'next/dynamic'
+
+const CanvasEditor = dynamic(() => import('@/components/generate/CanvasEditor'), { ssr: false })
 
 const EXAMPLE_PROMPTS = [
   "Create a fintech dashboard design system with modern blue theme, professional, minimal, accessibility friendly.",
@@ -65,6 +68,8 @@ export default function GeneratePage() {
   const [generatedDesignSystem, setGeneratedDesignSystem] = useState<any>(null)
   const [figmaJson, setFigmaJson] = useState<FigmaJsonRoot | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState(false)
+  const [showCanvasEditor, setShowCanvasEditor] = useState(false)
   const { isCreating, createDesignSystem, currentDesignSystem, fetchDesignSystemById } = useDesignSystemStore()
 
   // Component categories for selection
@@ -357,6 +362,20 @@ export default function GeneratePage() {
     }
   }
 
+  // Copy Share URL
+  const handleCopyShareUrl = async () => {
+    if (generatedDesignSystem) {
+      try {
+        const url = `${window.location.origin}/design-system/${generatedDesignSystem.id}`
+        await navigator.clipboard.writeText(url)
+        setCopiedUrl(true)
+        setTimeout(() => setCopiedUrl(false), 2000)
+      } catch (err) {
+        console.error('Failed to copy URL:', err)
+      }
+    }
+  }
+
   // Download JSON as file
   const handleDownloadJson = () => {
     if (figmaJson) {
@@ -377,6 +396,34 @@ export default function GeneratePage() {
     if (generatedDesignSystem) {
       router.push(`/design-system/${generatedDesignSystem.id}`)
     }
+  }
+
+  // Show canvas editor when activated
+  if (showCanvasEditor && currentDesignSystem) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        {/* Header */}
+        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <Palette className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-bold">DesignAI</span>
+            </Link>
+            <nav className="flex items-center gap-4">
+              <Link href="/dashboard">
+                <Button variant="ghost">Dashboard</Button>
+              </Link>
+              <UserButton />
+            </nav>
+          </div>
+        </header>
+        <CanvasEditor
+          designSystem={currentDesignSystem}
+          selectedComponents={selectedComponents}
+          onBack={() => setShowCanvasEditor(false)}
+        />
+      </div>
+    )
   }
 
   return (
@@ -1308,8 +1355,35 @@ export default function GeneratePage() {
                       Download JSON
                     </Button>
                     <Button
-                      onClick={handleViewDesignSystem}
+                      onClick={handleCopyShareUrl}
+                      variant="outline"
+                      className="gap-2"
+                      disabled={!currentDesignSystem}
+                    >
+                      {copiedUrl ? (
+                        <>
+                          <Check className="h-4 w-4 text-green-500" />
+                          Copied URL!
+                        </>
+                      ) : (
+                        <>
+                          <Share2 className="h-4 w-4" />
+                          Copy Share URL
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => setShowCanvasEditor(true)}
                       variant="default"
+                      className="gap-2"
+                      disabled={!currentDesignSystem}
+                    >
+                      <PenTool className="h-4 w-4" />
+                      Open Canvas Editor
+                    </Button>
+                    <Button
+                      onClick={handleViewDesignSystem}
+                      variant="outline"
                       className="gap-2 ml-auto"
                     >
                       View Full Design System

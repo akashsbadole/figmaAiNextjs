@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ClerkAuthProvider } from "@/lib/clerk";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,14 +53,16 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkAuthProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-        >
-          {children}
-          <Toaster />
-        </body>
-      </html>
+      <ThemeProvider defaultTheme="system">
+        <html lang="en" suppressHydrationWarning>
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+          >
+            {children}
+            <Toaster />
+          </body>
+        </html>
+      </ThemeProvider>
     </ClerkAuthProvider>
   );
 }

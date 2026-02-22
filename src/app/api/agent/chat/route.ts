@@ -120,11 +120,36 @@ export async function POST(request: NextRequest) {
     // Prepare message history
     const messageHistory = messages || []
 
+    // Fetch recent design systems to provide context to the AI
+    const recentDesignSystems = await db.designSystem.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    })
+
+    let enhancedPrompt = UI_UX_SYSTEM_PROMPT
+    if (recentDesignSystems.length > 0) {
+      enhancedPrompt += `\n\n=== USER'S RECENT DESIGN SYSTEMS ===\n`
+      enhancedPrompt += `The user has recently generated the following design systems. Use this context to provide highly tailored and specific advice if it is relevant to their question:\n\n`
+      
+      recentDesignSystems.forEach((ds, index) => {
+        enhancedPrompt += `[Design System ${index + 1}]\n`
+        enhancedPrompt += `- Name: ${ds.name}\n`
+        if (ds.industry) enhancedPrompt += `- Industry: ${ds.industry}\n`
+        if (ds.designPreferences) enhancedPrompt += `- Preferences: ${ds.designPreferences}\n`
+        enhancedPrompt += `- Colors: ${ds.colors}\n`
+        enhancedPrompt += `- Typography: ${ds.typography}\n`
+        enhancedPrompt += `- Prompt Used: ${ds.prompt}\n\n`
+      })
+      
+      enhancedPrompt += `If the user asks about "my design system", "my colors", or something similar, assume they are talking about their most recent design systems listed above. Provide specific color hex codes, font names, or layout suggestions that match their existing tokens where appropriate.`
+    }
+
     // Use Gemini AI to generate response
     const gemini = getGeminiAI()
     const aiResponse = await gemini.chat(
       messageHistory,
-      UI_UX_SYSTEM_PROMPT
+      enhancedPrompt
     )
 
     if (!aiResponse) {

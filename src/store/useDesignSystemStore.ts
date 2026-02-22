@@ -303,6 +303,9 @@ export interface DesignSystemState {
   isLoadingHistory: boolean;
   isExporting: boolean;
   
+  // Figma Sync Data
+  figmaJson: any | null;
+  
   // Error States
   error: string | null;
   singleError: string | null;
@@ -354,6 +357,7 @@ export interface DesignSystemActions {
   setDeleteDialogOpen: (open: boolean) => void;
   setShareDialogOpen: (open: boolean) => void;
   setPreviewDesignSystem: (id: string | null) => void;
+  setFigmaJson: (json: any | null) => void;
   
   // Utility
   clearError: () => void;
@@ -396,6 +400,7 @@ const initialState: DesignSystemState = {
   isDeleteDialogOpen: false,
   isShareDialogOpen: false,
   previewDesignSystemId: null,
+  figmaJson: null,
 };
 
 // ============================================
@@ -735,6 +740,10 @@ export const useDesignSystemStore = create<DesignSystemStore>()(
 
       setPreviewDesignSystem: (id: string | null) => {
         set({ previewDesignSystemId: id });
+      },
+      
+      setFigmaJson: (json: any | null) => {
+        set({ figmaJson: json });
       },
 
       // ============================================

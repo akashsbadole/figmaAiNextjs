@@ -560,410 +560,336 @@ export default function AgentPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-              <div>
-                <h1 className="text-xl font-bold">UI/UX Design Agent</h1>
-                <p className="text-xs text-muted-foreground">AI-Powered Design Consulting</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {messages.length > 0 && (
-              <Button onClick={handleExportConversation} variant="outline" size="sm">
-                <FileDown className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            )}
-            <Button onClick={handleNewConversation} variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
-          </div>
+    <div className="flex h-screen overflow-hidden bg-white dark:bg-[#212121]">
+      {/* ChatGPT-style Sidebar */}
+      <div className="w-[260px] flex-shrink-0 bg-[#F9F9F9] dark:bg-[#171717] border-r border-border flex flex-col h-full hidden md:flex text-foreground relative transition-colors duration-300">
+        <div className="p-3 flex gap-2">
+          <Link href="/">
+             <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0">
+               <ArrowLeft className="h-4 w-4" />
+             </Button>
+          </Link>
+          <Button 
+            onClick={handleNewConversation} 
+            variant="ghost" 
+            className="flex-1 justify-start gap-2 rounded-lg h-10 px-3 border border-border shadow-sm hover:bg-muted"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="text-sm font-medium">New Chat</span>
+          </Button>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-140px)]">
-          {/* Sidebar - Conversations */}
-          <Card className="lg:col-span-1 overflow-auto">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Conversations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Search Input */}
-              <div className="relative mb-3">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search conversations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+        
+        <ScrollArea className="flex-1 px-3">
+          <div className="py-2">
+            <p className="text-xs font-semibold text-muted-foreground px-3 mb-3 mt-2">Chat History</p>
+            {loadingConversations ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
-              <ScrollArea className="h-[calc(100vh-340px)]">
-                {loadingConversations ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin" />
+            ) : filteredConversations.length === 0 ? (
+              <div className="text-center py-4 text-xs text-muted-foreground">
+                No recent chats
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filteredConversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    onClick={() => loadConversation(conv.id)}
+                    className={`group relative flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg transition-colors cursor-pointer ${
+                      currentConversation?.id === conv.id
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'hover:bg-muted text-foreground'
+                    }`}
+                  >
+                    <MessageSquare className="h-4 w-4 shrink-0 opacity-70" />
+                    <div className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm">
+                      {conv.title}
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 absolute right-1 shrink-0 transition-opacity text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => handleRenameConversation(conv, e)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleCopyShareLink(conv, e)}>
+                          <Link2 className="h-4 w-4 mr-2" />
+                          Copy Shareable Link
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={(e) => handleDeleteConversation(conv.id, e)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                ) : conversations.length === 0 ? (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No conversations yet</p>
-                    <p className="text-xs mt-1">Start a new chat!</p>
-                  </div>
-                ) : filteredConversations.length === 0 ? (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No conversations found</p>
-                    <p className="text-xs mt-1">Try a different search term</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredConversations.map((conv) => (
-                      <div
-                        key={conv.id}
-                        onClick={() => loadConversation(conv.id)}
-                        className={`w-full text-left p-3 rounded-lg transition-colors cursor-pointer overflow-auto ${currentConversation?.id === conv.id
-                            ? 'bg-primary/10 border border-primary/20'
-                            : 'hover:bg-muted/50 border border-transparent'
-                          }`}
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#212121] relative">
+        {/* Header (Mobile Only) */}
+        <header className="md:hidden flex items-center justify-between p-4 border-b">
+           <Button variant="ghost" size="icon" onClick={() => {/* Toggle Sidebar function needed here originally */}}>
+             <MoreVertical className="h-5 w-5" />
+           </Button>
+           <h1 className="text-xl font-bold">UI/UX Design Agent</h1>
+           <Button variant="ghost" size="icon" onClick={handleNewConversation}>
+             <Plus className="h-5 w-5" />
+           </Button>
+        </header>
+
+        <ScrollArea className="flex-1 pb-40" ref={scrollRef}>
+          <div className="max-w-3xl mx-auto w-full pt-10 pb-[100px]">
+            {messages.length === 0 && showSuggestions ? (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+                <div className="bg-[#171717] rounded-full p-4 mb-6 shadow-md shadow-black/5 dark:shadow-white/5">
+                  <Sparkles className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold mb-3 tracking-tight text-foreground">How can I help you design today?</h2>
+                <div className="w-full max-w-2xl mt-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {SUGGESTED_PROMPTS.map((prompt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSendMessage(prompt)}
+                        className="p-4 rounded-xl border border-border bg-card/50 hover:bg-muted text-left transition-colors font-medium text-sm text-foreground/80"
                       >
-                        <div className="flex items-start min-w-0">
-                          <div className="flex-1 min-w-0 overflow-auto">
-                            <p className="text-sm font-medium">{conv.title}</p>
-                            <div className="flex items-center mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {conv.type}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {new Date(conv.updatedAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 opacity-60 hover:opacity-100"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <MoreVertical className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => handleRenameConversation(conv, e)}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Rename
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => handleCopyShareLink(conv, e)}>
-                                <Link2 className="h-4 w-4 mr-2" />
-                                Copy Shareable Link
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={(e) => handleDeleteConversation(conv.id, e)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
+                        {prompt}
+                      </button>
                     ))}
                   </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Chat Area */}
-          <Card className="lg:col-span-3 flex flex-col overflow-auto">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-primary" />
-                {currentConversation?.title || 'New Conversation'}
-              </CardTitle>
-              <CardDescription>
-                Ask anything about UI/UX design, user experience, accessibility, and more
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-0">
-              {/* Messages */}
-              <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-                <div className="space-y-4 pb-4">
-                  {messages.length === 0 && showSuggestions ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                      <div className="bg-primary/10 rounded-full p-4 mb-4">
-                        <Sparkles className="h-12 w-12 text-primary" />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 px-4">
+                {messages.map((msg) => (
+                  <div key={msg.id} className="w-full flex">
+                    <div className="w-full flex group gap-4">
+                      {/* Avatar Space */}
+                      <div className="w-8 shrink-0 flex justify-center mt-1">
+                        {msg.role === 'assistant' ? (
+                          <div className="h-8 w-8 flex items-center justify-center rounded-full bg-[#10a37f] shadow-sm">
+                            <Sparkles className="h-4 w-4 text-white" />
+                          </div>
+                        ) : null}
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">Start Your Design Consultation</h3>
-                      <p className="text-sm text-muted-foreground max-w-md mb-6">
-                        I'm your AI-powered UI/UX design consultant. Ask me about design systems,
-                        user research, accessibility, best practices, or any design challenge you're facing.
-                      </p>
-                      <div className="w-full max-w-2xl">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Lightbulb className="h-4 w-4 text-primary" />
-                          <p className="text-xs font-medium text-muted-foreground">Suggested prompts:</p>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-2">
-                          {SUGGESTED_PROMPTS.map((prompt, i) => (
-                            <button
-                              key={i}
-                              onClick={() => handleSendMessage(prompt)}
-                              className="text-sm p-3 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
-                            >
-                              {prompt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'
-                          }`}
-                      >
-                        {msg.role === 'assistant' && (
-                          <Avatar className="h-8 w-8 flex-shrink-0">
-                            <AvatarFallback className="bg-primary text-primary-foreground">
-                              AI
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div
-                          className={`max-w-[80%] rounded-lg p-4 ${msg.role === 'user'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                            }`}
-                        >
-                          {editingMessageId === msg.id ? (
-                            <div className="space-y-2">
-                              <Textarea
-                                value={editedContent}
-                                onChange={(e) => setEditedContent(e.target.value)}
-                                className="min-h-[100px]"
-                              />
-                              <div className="flex gap-2">
-                                <Button size="sm" onClick={() => handleSaveEdit(msg.id)}>
-                                  Save & Submit
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              {msg.role === 'assistant' && (
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-medium opacity-70">AI Assistant</span>
-                                  <div className="flex items-center gap-1">
-                                    {/* Thumbs Up Button */}
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className={`h-6 w-6 ${msg.reaction === 'up' ? 'text-green-500' : 'opacity-60 hover:opacity-100'}`}
-                                      onClick={() => handleReaction(msg.id, 'up')}
-                                      title="Good response"
-                                    >
-                                      <ThumbsUp className="h-3 w-3" fill={msg.reaction === 'up' ? 'currentColor' : 'none'} />
+                      
+                      {/* Message Content */}
+                      <div className="flex-1 space-y-2 overflow-hidden min-w-0">
+                        {msg.role === 'user' ? (
+                          <div className="flex justify-end">
+                            <div className="max-w-[85%] rounded-3xl bg-muted px-5 py-3 text-foreground mb-4 prose prose-sm dark:prose-invert">
+                              {editingMessageId === msg.id ? (
+                                <div className="space-y-3 mt-2 min-w-[300px]">
+                                  <Textarea
+                                    value={editedContent}
+                                    onChange={(e) => setEditedContent(e.target.value)}
+                                    className="min-h-[100px] border-border bg-background"
+                                  />
+                                  <div className="flex justify-end gap-2">
+                                    <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                      Cancel
                                     </Button>
-                                    {/* Thumbs Down Button */}
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className={`h-6 w-6 ${msg.reaction === 'down' ? 'text-red-500' : 'opacity-60 hover:opacity-100'}`}
-                                      onClick={() => handleReaction(msg.id, 'down')}
-                                      title="Poor response"
-                                    >
-                                      <ThumbsDown className="h-3 w-3" fill={msg.reaction === 'down' ? 'currentColor' : 'none'} />
+                                    <Button size="sm" onClick={() => handleSaveEdit(msg.id)}>
+                                      Send
                                     </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6 opacity-60 hover:opacity-100"
-                                      onClick={() => copyToClipboard(msg.content, msg.id)}
-                                      title="Copy"
-                                    >
-                                      {copiedIdx === msg.id ? (
-                                        <Check className="h-3 w-3 text-green-500" />
-                                      ) : (
-                                        <Copy className="h-3 w-3" />
-                                      )}
-                                    </Button>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 opacity-60 hover:opacity-100"
-                                        >
-                                          <MoreVertical className="h-3 w-3" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => handleRegenerateResponse(msg.id)}>
-                                          <RefreshCw className="h-4 w-4 mr-2" />
-                                          Regenerate
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
                                   </div>
                                 </div>
-                              )}
-                              {msg.role === 'user' && (
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-medium opacity-70">You</span>
+                              ) : (
+                                <div className="relative group/edit">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {msg.content}
+                                  </ReactMarkdown>
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 opacity-60 hover:opacity-100"
+                                    className="absolute -bottom-8 right-0 h-8 w-8 opacity-0 group-hover/edit:opacity-100 transition-opacity bg-background rounded-full shadow-md"
                                     onClick={() => handleEditMessage(msg.id)}
                                     title="Edit"
                                   >
-                                    <Edit2 className="h-3 w-3" />
+                                    <Edit2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               )}
-                              <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  components={{
-                                    code({ node, inline, className, children, ...props }: any) {
-                                      const match = /language-(\w+)/.exec(className || '')
-                                      const codeString = String(children).replace(/\n$/, '')
-                                      
-                                      // Code block component with copy button
-                                      if (!inline && match) {
-                                        return (
-                                          <div className="relative group">
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-full">
+                            <h4 className="text-sm font-semibold mb-2 text-foreground/80">UI/UX Assistant</h4>
+                            <div className="prose prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0 prose-pre:bg-transparent prose-pre:m-0">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  code({ node, inline, className, children, ...props }: any) {
+                                    const match = /language-(\w+)/.exec(className || '')
+                                    const codeString = String(children).replace(/\n$/, '')
+                                    
+                                    if (!inline && match) {
+                                      return (
+                                        <div className="relative group rounded-xl overflow-hidden my-4 border border-border">
+                                          <div className="flex items-center justify-between px-4 py-2 bg-muted/80 text-muted-foreground text-xs font-mono">
+                                            <span>{match[1]}</span>
                                             <Button
                                               variant="ghost"
-                                              size="icon"
-                                              className="absolute right-2 top-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 hover:bg-white/20 z-10"
+                                              size="sm"
+                                              className="h-6 gap-1 hover:text-foreground hover:bg-muted"
                                               onClick={() => copyCodeBlock(codeString)}
-                                              title="Copy code"
                                             >
-                                              <Copy className="h-3 w-3 text-white" />
+                                              <Copy className="h-3 w-3" />
+                                              Copy code
                                             </Button>
-                                            <SyntaxHighlighter
-                                              style={vscDarkPlus}
-                                              language={match[1]}
-                                              PreTag="div"
-                                              {...props}
-                                            >
-                                              {codeString}
-                                            </SyntaxHighlighter>
                                           </div>
-                                        )
-                                      }
-                                      
-                                      return (
-                                        <code className={className} {...props}>
-                                          {children}
-                                        </code>
+                                          <SyntaxHighlighter
+                                            style={vscDarkPlus}
+                                            language={match[1]}
+                                            PreTag="div"
+                                            customStyle={{ margin: 0, padding: '1rem', borderRadius: 0, backgroundColor: '#0d1117' }}
+                                            {...props}
+                                          >
+                                            {codeString}
+                                          </SyntaxHighlighter>
+                                        </div>
                                       )
                                     }
-                                  }}
-                                >
-                                  {msg.content}
-                                </ReactMarkdown>
-                              </div>
+                                    return (
+                                      <code className="bg-muted px-1.5 py-0.5 rounded-md font-mono text-sm before:content-none after:content-none" {...props}>
+                                        {children}
+                                      </code>
+                                    )
+                                  }
+                                }}
+                              >
+                                {msg.content}
+                              </ReactMarkdown>
+
                               {msg.isStreaming && (
-                                <div className="flex items-center gap-1 mt-2">
-                                  <span className="inline-block w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                  <span className="inline-block w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                  <span className="inline-block w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                  <span className="text-xs opacity-60 ml-2">Generating...</span>
+                                <div className="flex items-center gap-1 mt-4 text-foreground/50">
+                                  <span className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
+                                  <span className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
+                                  <span className="w-2 h-2 rounded-full bg-current animate-bounce" />
                                 </div>
                               )}
-                              <p className="text-xs mt-2 opacity-60">
-                                {new Date(msg.timestamp).toLocaleTimeString()}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                        {msg.role === 'user' && (
-                          <Avatar className="h-8 w-8 flex-shrink-0">
-                            <AvatarImage src="" />
-                            <AvatarFallback>U</AvatarFallback>
-                          </Avatar>
+                            </div>
+
+                            {/* Actions Toolbar */}
+                            {!msg.isStreaming && (
+                              <div className="flex items-center gap-1 mt-4 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
+                                  onClick={() => copyToClipboard(msg.content, msg.id)}
+                                  title="Copy response"
+                                >
+                                  {copiedIdx === msg.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-8 w-8 rounded-full hover:bg-muted ${msg.reaction === 'up' ? 'text-green-500' : 'text-muted-foreground hover:text-foreground'}`}
+                                  onClick={() => handleReaction(msg.id, 'up')}
+                                  title="Good response"
+                                >
+                                  <ThumbsUp className="h-4 w-4" fill={msg.reaction === 'up' ? 'currentColor' : 'none'} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-8 w-8 rounded-full hover:bg-muted ${msg.reaction === 'down' ? 'text-red-500' : 'text-muted-foreground hover:text-foreground'}`}
+                                  onClick={() => handleReaction(msg.id, 'down')}
+                                  title="Poor response"
+                                >
+                                  <ThumbsDown className="h-4 w-4" fill={msg.reaction === 'down' ? 'currentColor' : 'none'} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
+                                  onClick={() => handleRegenerateResponse(msg.id)}
+                                  title="Regenerate"
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-
-              {/* Input */}
-              <div className="pt-4 border-t mt-4">
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Ask about UI/UX design..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault()
-                        handleSendMessage()
-                      }
-                    }}
-                    className="min-h-[60px] resize-none"
-                    disabled={loading}
-                  />
-                  <div className="flex flex-col  justify-start  gap-2">
-                    {isGenerating ? (
-                      <Button
-                        onClick={handleStopGeneration}
-                        variant="destructive"
-                        size="icon"
-                        className="h-[28px] w-[60px]"
-                      >
-                        <StopCircle className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleSendMessage()}
-                        disabled={!message.trim() || loading}
-                        size="icon"
-                        className="h-[28px] w-[60px]"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    )}
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Press Enter to send, Shift + Enter for new line
-                  {isListening && <span className="text-red-500 ml-2">● Listening...</span>}
-                </p>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Floating Input Area */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-[#212121] dark:via-[#212121] pt-10 pb-6 px-4 z-10 pointer-events-none">
+          <div className="max-w-3xl mx-auto w-full pointer-events-auto">
+            <div className="relative shadow-lg ring-1 ring-border shadow-black/5 dark:shadow-black/20 rounded-[24px] bg-background">
+              <Textarea
+                placeholder="Message your UI/UX Agent..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendMessage()
+                  }
+                }}
+                className="min-h-[56px] w-full resize-none border-0 focus-visible:ring-0 shadow-none px-4 py-4 rounded-[24px] pr-[50px] bg-transparent"
+                disabled={loading}
+                rows={1}
+                style={{ height: '56px', maxHeight: '200px' }}
+              />
+              <div className="absolute right-2 bottom-2">
+                {isGenerating ? (
+                  <Button
+                    onClick={handleStopGeneration}
+                    size="icon"
+                    className="h-10 w-10 shrink-0 rounded-full bg-primary"
+                  >
+                    <StopCircle className="h-5 w-5 fill-primary-foreground stroke-primary" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => handleSendMessage()}
+                    disabled={!message.trim() || loading}
+                    size="icon"
+                    className="h-10 w-10 shrink-0 rounded-full transition-all bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-50 text-primary-foreground"
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
+              {isListening && <span className="absolute left-4 -top-6 text-xs text-red-500 font-medium">● Listening...</span>}
+            </div>
+            <p className="text-center text-xs text-muted-foreground mt-3">
+              UI/UX Agent can make mistakes. Consider verifying important design decisions.
+            </p>
+          </div>
         </div>
-      </main>
+      </div>
       
       {/* Rename Conversation Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
