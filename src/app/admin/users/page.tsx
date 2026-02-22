@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -81,7 +81,18 @@ interface Pagination {
   totalPages: number
 }
 
-export default function AdminUsersPage() {
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading users...</p>
+      </div>
+    </div>
+  )
+}
+
+function UsersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
@@ -223,11 +234,7 @@ export default function AdminUsersPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+    return <LoadingState />
   }
 
   return (
@@ -482,5 +489,13 @@ export default function AdminUsersPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminUsersPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <UsersContent />
+    </Suspense>
   )
 }
