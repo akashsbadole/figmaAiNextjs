@@ -9,9 +9,7 @@ import {
   FigmaFile 
 } from '@/lib/figma-generator'
 import { 
-  createTokensStudioExport,
   createFigmaJsonExport,
-  getFigmaJsonString,
   convertToTokensStudio 
 } from '@/lib/figmagic-exporter'
 import { figmaJsonToString } from '@/lib/figma-json-format'
@@ -64,7 +62,7 @@ export async function GET(
     // Generate Figma file based on format
     if (format === 'tokens-studio') {
       // Generate Tokens Studio (Figmagic) format for Figma import
-      const tokensData = createTokensStudioExport(designSystem)
+      const tokensData = convertToTokensStudio(designSystem)
       
       return new NextResponse(JSON.stringify(tokensData, null, 2), {
         headers: {

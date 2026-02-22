@@ -6,7 +6,7 @@ import {
   convertDesignSystemToFigmaJson,
   FigmaFile 
 } from '@/lib/figma-generator'
-import { createTokensStudioExport, createFigmaJsonExport } from '@/lib/figmagic-exporter'
+import { convertToTokensStudio, createFigmaJsonExport } from '@/lib/figmagic-exporter'
 import { figmaJsonToString, FigmaJsonRoot } from '@/lib/figma-json-format'
 
 interface ExportOptions {
@@ -296,7 +296,7 @@ export async function GET(
         filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}.figma.json`
         break
       case 'tokens-studio':
-        const tokensStudioData = createTokensStudioExport(designSystem)
+        const tokensStudioData = convertToTokensStudio(designSystem)
         content = JSON.stringify(tokensStudioData, null, 2)
         contentType = 'application/json'
         filename = `${designSystem.name.replace(/\s+/g, '-').toLowerCase()}-tokens-studio.json`
